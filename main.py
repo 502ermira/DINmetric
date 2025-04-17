@@ -1,7 +1,8 @@
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QVBoxLayout, QHBoxLayout,
-    QPushButton, QComboBox, QTableWidget, QTableWidgetItem, QHeaderView, QTabWidget, QMessageBox
+    QPushButton, QComboBox, QTableWidget, QTableWidgetItem, QHeaderView, QTabWidget,
+    QMessageBox, QAbstractItemView
 )
 from PyQt5.QtCore import Qt
 import matplotlib.pyplot as plt
@@ -42,11 +43,15 @@ class PlateLoadTestApp(QWidget):
         meta_layout.addLayout(meta_form)
 
         # --- Data Entry Table ---
-        self.table = QTableWidget(6, 3)
-        self.table.setHorizontalHeaderLabels(["Load (kN)", "Settlement (mm)", "Cycle Type"])
+        self.table = QTableWidget(14, 4)
+        self.table.setHorizontalHeaderLabels(["Load (kN)", "Settlement (mm)", "Cycle Type", ""])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.currentCellChanged.connect(self.handle_cell_changed)
-        self.setup_table_rows(6)
+        self.setup_table_rows(14)
+
+        # --- Add/Delete Buttons ---
+        self.add_row_btn = QPushButton("➕ Add Row")
+        self.add_row_btn.clicked.connect(self.add_row)
 
         # --- Plot Area ---
         self.figure, self.ax = plt.subplots()
@@ -57,6 +62,8 @@ class PlateLoadTestApp(QWidget):
 
         # --- Buttons ---
         button_layout = QHBoxLayout()
+        button_layout.addWidget(self.add_row_btn)
+
         calc_btn = QPushButton("Evaluate")
         calc_btn.clicked.connect(self.evaluate_test)
         button_layout.addWidget(calc_btn)
@@ -77,16 +84,41 @@ class PlateLoadTestApp(QWidget):
             self.setup_row(row)
 
     def setup_row(self, row):
+        # Add ComboBox for Cycle Type
         combo = QComboBox()
         combo.addItem("")  # Empty default
         combo.addItems(CYCLE_TYPES)
         self.table.setCellWidget(row, 2, combo)
 
-    def handle_cell_changed(self, currentRow, currentColumn, previousRow, previousColumn):
-       if currentRow == self.table.rowCount() - 1:
-           self.table.insertRow(self.table.rowCount())
-           self.setup_row(self.table.rowCount() - 1)
+        # Add Delete Button
+        delete_btn = QPushButton("🗑")
+        delete_btn.setStyleSheet("QPushButton")
+        delete_btn.clicked.connect(lambda _, r=row: self.confirm_delete_row(r))
+        self.table.setCellWidget(row, 3, delete_btn)
 
+    def handle_cell_changed(self, currentRow, currentColumn, previousRow, previousColumn):
+        if currentRow == self.table.rowCount() - 1 and currentColumn in [0, 1, 2]:
+            self.add_row()
+
+
+    def add_row(self):
+        row_position = self.table.rowCount()
+        self.table.insertRow(row_position)
+        self.setup_row(row_position)
+
+    def confirm_delete_row(self, row):
+        reply = QMessageBox.question(
+            self, "Confirm Delete", f"Are you sure you want to delete row {row + 1}?",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+        )
+        if reply == QMessageBox.Yes:
+            self.table.removeRow(row)
+            # Re-setup all delete buttons to reference correct rows
+            for i in range(self.table.rowCount()):
+                delete_btn = QPushButton("🗑")
+                delete_btn.setStyleSheet("QPushButton")
+                delete_btn.clicked.connect(lambda _, r=i: self.confirm_delete_row(r))
+                self.table.setCellWidget(i, 3, delete_btn)
 
     def evaluate_test(self):
         try:
@@ -95,7 +127,6 @@ class PlateLoadTestApp(QWidget):
             lever = float(self.lever_ratio.text())
             area = np.pi * (d / 1000) ** 2 / 4  # m²
 
-            # Gather data per cycle
             data_cycles = {cycle: {'loads': [], 'settlements': []} for cycle in CYCLE_TYPES}
 
             print("\n---- Starting Evaluation ----")
@@ -115,7 +146,7 @@ class PlateLoadTestApp(QWidget):
                     data_cycles[cycle_type]['loads'].append(load)
                     data_cycles[cycle_type]['settlements'].append(settlement)
                     print(f"Row {row}: Load={load:.2f} kN, Settlement={settlement:.2f} mm, Type={cycle_type}")
-                except Exception as e:
+                except Exception:
                     continue
 
             if len(data_cycles["First Loading"]['loads']) < 4 or len(data_cycles["Second Loading"]['loads']) < 2:
@@ -140,7 +171,6 @@ class PlateLoadTestApp(QWidget):
                     continue
 
                 stress = loads / area / 1000  # MN/m²
-
                 sort_idx = np.argsort(stress)
                 stress = stress[sort_idx]
                 settlements = settlements[sort_idx]
