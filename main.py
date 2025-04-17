@@ -64,6 +64,11 @@ class PlateLoadTestApp(QWidget):
         button_layout = QHBoxLayout()
         button_layout.addWidget(self.add_row_btn)
 
+        clear_btn = QPushButton("Clear")
+        clear_btn.clicked.connect(self.clear_fields)
+        button_layout.addWidget(clear_btn)
+        
+
         calc_btn = QPushButton("Evaluate")
         calc_btn.clicked.connect(self.evaluate_test)
         button_layout.addWidget(calc_btn)
@@ -119,6 +124,34 @@ class PlateLoadTestApp(QWidget):
                 delete_btn.setStyleSheet("QPushButton")
                 delete_btn.clicked.connect(lambda _, r=i: self.confirm_delete_row(r))
                 self.table.setCellWidget(i, 3, delete_btn)
+
+
+    def clear_fields(self):
+        self.test_id.clear()
+        self.plate_diameter.setCurrentIndex(0)
+        self.lever_ratio.setText("1.000")
+    
+        # Reset table to exactly 14 rows
+        self.table.setRowCount(14)
+        self.setup_table_rows(14)
+    
+        # Clear content in the first two columns
+        for row in range(14):
+            for col in range(2):  # Load and Settlement columns
+                self.table.setItem(row, col, QTableWidgetItem(""))
+    
+            # Reset combo box
+            combo = self.table.cellWidget(row, 2)
+            if isinstance(combo, QComboBox):
+                combo.setCurrentIndex(0)
+    
+        # Reset plot
+        self.ax.clear()
+        self.canvas.draw()
+    
+        # Reset result label
+        self.result_label.setText("\nResults will be shown here.")
+
 
     def evaluate_test(self):
         try:
