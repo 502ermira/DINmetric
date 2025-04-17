@@ -119,24 +119,27 @@ class PlateLoadTestApp(QWidget):
             }
             ev_results = []
 
+
+            first_cycle_sigma_max = None
+
             for idx, cycle in enumerate(CYCLE_TYPES):
                 loads = np.array(data_cycles[cycle]['loads'])
                 settlements = np.array(data_cycles[cycle]['settlements'])
                 if len(loads) < 2:
                     continue  # skip empty cycles
-
+            
                 # Convert to stress (MN/m²)
                 stress = loads / area / 1000  # MN/m²
-
+            
                 # Sort by stress
                 sort_idx = np.argsort(stress)
                 stress = stress[sort_idx]
                 settlements = settlements[sort_idx]
                 loads = loads[sort_idx]
-
+            
                 # Plot measured points
                 self.ax.plot(settlements, loads, 'o-', label=f"{cycle} (measured)", color=colors[cycle], alpha=0.7)
-
+            
                 # Only "loading" cycles get polynomial fit and Ev
                 if "Loading" in cycle:
                     # Special: DIN says for 1st fit, skip the first point(!)
@@ -145,18 +148,21 @@ class PlateLoadTestApp(QWidget):
                     if cycle == "First Loading" and len(stress) > 2:
                         fit_stress = stress[1:]  # skip very first point per DIN
                         fit_settl = settlements[1:]
-
+            
                     # Fit quadratic: settlement = a0 + a1*σ + a2*σ²
                     coeffs = np.polyfit(fit_stress, fit_settl, 2)
                     a2, a1, a0 = coeffs
-
-                    print(f"\n[{cycle}] Fitted polynomial: a0={a0:.6f}, a1={a1:.6f}, a2={a2:.6f}")
-
-                    # Calculate Ev according to DIN 18134
-                    sigma_max = np.max(fit_stress)
+            
+                    # Calculate sigma_max for Ev
+                    if cycle == "First Loading":
+                        sigma_max = np.max(fit_stress)
+                        first_cycle_sigma_max = sigma_max  # Store for use in later cycles
+                    else:
+                        sigma_max = first_cycle_sigma_max  # Use first cycle's sigma_max
+            
                     Ev = (1.5 * r) / (a1 + a2 * sigma_max)  # in kN/m² (since r in mm)
                     print(f"[{cycle}] sigma_max = {sigma_max:.4f} MN/m²; Ev = {Ev:.2f} kN/m²")
-
+            
                     # Save result for display
                     ev_results.append({
                         'cycle': cycle,
@@ -166,13 +172,13 @@ class PlateLoadTestApp(QWidget):
                         'a2': a2,
                         'sigma_max': sigma_max
                     })
-
+            
                     # Plot fit
                     sigma_range = np.linspace(np.min(fit_stress), np.max(fit_stress), 200)
                     fit_settlement = a0 + a1 * sigma_range + a2 * sigma_range ** 2
                     fit_loads = sigma_range * area * 1000  # back to kN
                     self.ax.plot(fit_settlement, fit_loads, '--', color=colors[cycle], label=f"{cycle} Fit")
-
+            
             self.ax.set_xlabel("Settlement (mm)")
             self.ax.set_ylabel("Load (kN)")
             self.ax.set_title("Load-Settlement Curve (DIN 18134)")
