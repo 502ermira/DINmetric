@@ -225,6 +225,17 @@ class PlateLoadTestApp(QWidget):
                     f"&nbsp;&nbsp;a0 = {ev['a0']:.4f}, a1 = {ev['a1']:.4f}, a2 = {ev['a2']:.4f}<br>"
                     f"&nbsp;&nbsp;sigma_max = {ev['sigma_max']:.4f} MN/m²"
                 )
+
+            # --- Calculate general Ev ratio Ev2 / Ev1 if both are available ---
+            ev1 = next((ev['Ev'] for ev in ev_results if ev['cycle'] == "First Loading"), None)
+            ev2 = next((ev['Ev'] for ev in ev_results if ev['cycle'] == "Second Loading"), None)
+            
+            if ev1 and ev2:
+                ev_ratio = ev2 / ev1
+                result_lines.append(
+                    f"<b>General Ev Ratio (Ev2 / Ev1):</b> <b>{ev_ratio:.2f}</b>"
+                )    
+            
             self.result_label.setText("<br><br>".join(result_lines))
             print("---- Evaluation Done ----\n")
 
