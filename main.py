@@ -8,6 +8,12 @@ from PyQt5.QtCore import Qt
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import numpy as np
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import mm
+from reportlab.platypus import Image as RLImage
+import tempfile
+import os
 
 CYCLE_TYPES = [
     "First Loading",
@@ -73,6 +79,10 @@ class PlateLoadTestApp(QWidget):
         calc_btn.clicked.connect(self.evaluate_test)
         button_layout.addWidget(calc_btn)
 
+        export_btn = QPushButton("Export to PDF")
+        export_btn.clicked.connect(self.export_to_pdf)
+        button_layout.addWidget(export_btn)
+        
         # --- Main Layout ---
         layout = QVBoxLayout()
         layout.addLayout(meta_layout)
@@ -151,6 +161,60 @@ class PlateLoadTestApp(QWidget):
     
         # Reset result label
         self.result_label.setText("\nResults will be shown here.")
+
+
+    def export_to_pdf(self):
+        try:
+            filename = f"PlateLoadTest_{self.test_id.text() or 'Untitled'}.pdf"
+            filepath = os.path.join(tempfile.gettempdir(), filename)
+    
+            c = canvas.Canvas(filepath, pagesize=A4)
+            width, height = A4
+    
+            # Title
+            c.setFont("Helvetica-Bold", 16)
+            c.drawCentredString(width / 2, height - 30, "LOAD TEST PLATE - DIN 18134")
+    
+            # Metadata
+            c.setFont("Helvetica", 10)
+            y = height - 50
+            spacing = 14
+            meta_fields = [
+                ("Test ID:", self.test_id.text()),
+                ("Plate Diameter:", self.plate_diameter.currentText() + " mm"),
+                ("Lever Ratio:", self.lever_ratio.text()),
+            ]
+            for label, val in meta_fields:
+                c.drawString(40, y, f"{label} {val}")
+                y -= spacing
+    
+            # Plot
+            temp_plot_path = os.path.join(tempfile.gettempdir(), "plot.png")
+            self.figure.savefig(temp_plot_path, bbox_inches="tight")
+    
+            c.drawImage(temp_plot_path, 40, y - 280, width=520, height=250)  # Adjust as needed
+            y -= 300
+    
+            # Results
+            from PyQt5.QtGui import QTextDocument
+            doc = QTextDocument()
+            doc.setHtml(self.result_label.text())
+            result_text = doc.toPlainText()
+    
+            for line in result_text.split("\n"):
+                if y < 100:
+                    c.showPage()
+                    y = height - 40
+                c.drawString(40, y, line.strip())
+                y -= spacing
+    
+            c.save()
+    
+            QMessageBox.information(self, "Export Complete", f"PDF exported to:\n{filepath}")
+            os.startfile(filepath)  # Opens the file on Windows (optional)
+        except Exception as e:
+            QMessageBox.critical(self, "Export Error", str(e))
+    
 
 
     def evaluate_test(self):
