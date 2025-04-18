@@ -2,7 +2,7 @@ import sys
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QVBoxLayout, QHBoxLayout,
     QPushButton, QComboBox, QTableWidget, QTableWidgetItem, QHeaderView, QTabWidget,
-    QMessageBox, QAbstractItemView
+    QMessageBox, QAbstractItemView, QDialog, QMainWindow, QToolBar
 )
 from PyQt5.QtCore import Qt
 import matplotlib.pyplot as plt
@@ -14,6 +14,7 @@ from reportlab.lib.units import mm
 from reportlab.platypus import Image as RLImage
 import tempfile
 import os
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 CYCLE_TYPES = [
     "First Loading",
@@ -82,6 +83,10 @@ class PlateLoadTestApp(QWidget):
         export_btn = QPushButton("Export to PDF")
         export_btn.clicked.connect(self.export_to_pdf)
         button_layout.addWidget(export_btn)
+
+        maximize_btn = QPushButton("Maximize Graph")
+        maximize_btn.clicked.connect(self.show_fullscreen_graph)
+        button_layout.addWidget(maximize_btn)
         
         # --- Main Layout ---
         layout = QVBoxLayout()
@@ -215,6 +220,28 @@ class PlateLoadTestApp(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Export Error", str(e))
     
+
+    def show_fullscreen_graph(self):
+        self.graph_window = QMainWindow(self)
+        self.graph_window.setWindowTitle("Graph Viewer")
+        self.graph_window.resize(1200, 800)  # Start large but not full screen
+    
+        # Create a central widget and layout
+        central_widget = QWidget()
+        layout = QVBoxLayout()
+    
+        # Add Matplotlib canvas and toolbar
+        full_canvas = FigureCanvas(self.figure)
+        toolbar = NavigationToolbar(full_canvas, self.graph_window)
+    
+        layout.addWidget(toolbar)
+        layout.addWidget(full_canvas)
+    
+        central_widget.setLayout(layout)
+        self.graph_window.setCentralWidget(central_widget)
+    
+        # Show the window (you can maximize it manually or drag to fullscreen)
+        self.graph_window.show()
 
 
     def evaluate_test(self):
