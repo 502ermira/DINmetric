@@ -187,49 +187,64 @@ class PlateLoadTestApp(QWidget):
 
             self.ax.clear()
             result_lines = []
+            
+            self.ax.set_title("Load-Settlement Curve (DIN 18134 Format)")
+            self.ax.set_xlabel("Normal Stress σ (MN/m²)")
+            self.ax.set_ylabel("Settlement s (mm)")
+            self.ax.grid(True)
+            
+            # Custom markers
+            cycle_markers = {
+                "First Loading": "o",
+                "Unloading": "s",
+                "Second Loading": "^",
+                "Third Loading (optional)": "v"
+            }
+            
             colors = {
                 "First Loading": "blue",
                 "Unloading": "gray",
                 "Second Loading": "green",
                 "Third Loading (optional)": "orange"
             }
+            
             ev_results = []
-
             first_cycle_sigma_max = None
-
-            for idx, cycle in enumerate(CYCLE_TYPES):
+            
+            for cycle in CYCLE_TYPES:
                 loads = np.array(data_cycles[cycle]['loads'])
                 settlements = np.array(data_cycles[cycle]['settlements'])
+            
                 if len(loads) < 2:
                     continue
-
-                stress = loads / area / 1000  # MN/m²
+            
+                stress = loads / area / 1000  # Convert to MN/m²
                 sort_idx = np.argsort(stress)
                 stress = stress[sort_idx]
                 settlements = settlements[sort_idx]
-                loads = loads[sort_idx]
-
-                self.ax.plot(settlements, loads, 'o-', label=f"{cycle} (measured)", color=colors[cycle], alpha=0.7)
-
+            
+                # Plot measurement points
+                self.ax.plot(stress, settlements, marker=cycle_markers[cycle], linestyle='None',
+                             label=cycle, color=colors[cycle])
+            
                 if "Loading" in cycle:
                     fit_stress = stress
                     fit_settl = settlements
                     if cycle == "First Loading" and len(stress) > 2:
                         fit_stress = stress[1:]
                         fit_settl = settlements[1:]
-
+            
                     coeffs = np.polyfit(fit_stress, fit_settl, 2)
                     a2, a1, a0 = coeffs
-
+            
                     if cycle == "First Loading":
                         sigma_max = np.max(fit_stress)
                         first_cycle_sigma_max = sigma_max
                     else:
                         sigma_max = first_cycle_sigma_max
-
+            
+                    # Calculate Ev
                     Ev = (1.5 * r) / (a1 + a2 * sigma_max)
-                    print(f"[{cycle}] sigma_max = {sigma_max:.4f} MN/m²; Ev = {Ev:.2f} kN/m²")
-
                     ev_results.append({
                         'cycle': cycle,
                         'Ev': Ev,
@@ -238,16 +253,30 @@ class PlateLoadTestApp(QWidget):
                         'a2': a2,
                         'sigma_max': sigma_max
                     })
-
+            
+                    # Plot fitted parabola
                     sigma_range = np.linspace(np.min(fit_stress), np.max(fit_stress), 200)
                     fit_settlement = a0 + a1 * sigma_range + a2 * sigma_range ** 2
-                    fit_loads = sigma_range * area * 1000
-                    self.ax.plot(fit_settlement, fit_loads, '--', color=colors[cycle], label=f"{cycle} Fit")
 
-            self.ax.set_xlabel("Settlement (mm)")
-            self.ax.set_ylabel("Load (kN)")
-            self.ax.set_title("Load-Settlement Curve (DIN 18134)")
+                    self.ax.plot(sigma_range, fit_settlement, '--', color=colors[cycle], label=f"{cycle} Fit")
+            
+                    # Plot secant for First Loading
+                    if cycle == "First Loading":
+                        sigma1 = 0.3 * sigma_max
+                        sigma2 = 0.7 * sigma_max
+                        s1 = a0 + a1 * sigma1 + a2 * sigma1**2
+                        s2 = a0 + a1 * sigma2 + a2 * sigma2**2
+
+                        self.ax.plot([sigma1, sigma2], [s1, s2], 'k-', lw=1.5, label="Secant 0.3σ to 0.7σ")
+            
+                        # Annotate sigma lines
+                        for val, label in zip([sigma1, sigma2, sigma_max], ["σ₁", "σ₂", "σ₃=σ_max"]):
+                            self.ax.axvline(x=val, color='black', linestyle=':', linewidth=0.8)
+                            self.ax.text(val, self.ax.get_ylim()[0], label, rotation=0, ha='center', va='bottom')
+            
+            # Finalize plot
             self.ax.legend()
+            self.ax.invert_yaxis()
             self.canvas.draw()
 
             result_lines.append(f"<b>Plate Radius:</b> {r:.1f} mm (Diameter: {d:.0f} mm)")
