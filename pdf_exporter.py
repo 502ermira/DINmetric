@@ -34,7 +34,7 @@ def export_to_pdf(app):
         temp_plot_path = os.path.join(tempfile.gettempdir(), "plot.png")
         app.figure.savefig(temp_plot_path, bbox_inches="tight")
 
-        c.drawImage(temp_plot_path, 40, y - 280, width=520, height=250)  # Adjust as needed
+        c.drawImage(temp_plot_path, 40, y - 280, width=520, height=250)
         y -= 300
 
         # Results

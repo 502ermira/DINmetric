@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 from constants import CYCLE_TYPES
-from data_handler import evaluate_test
+from data_handler import evaluate_test_secant
+from data_handler import evaluate_test_curve_fit
 from pdf_exporter import export_to_pdf
 from graph_window import GraphWindow
 
@@ -34,6 +35,11 @@ class PlateLoadTestApp(QWidget):
         meta_form.addWidget(self.plate_diameter)
         meta_form.addWidget(QLabel("Lever Ratio (hp/hm)"))
         meta_form.addWidget(self.lever_ratio)
+        self.method_selector = QComboBox()
+        self.method_selector.addItems(["Secant Method", "Curve Fitting Method"])
+        meta_form.addWidget(QLabel("Calculation Method"))
+        meta_form.addWidget(self.method_selector)
+
 
         meta_layout.addLayout(meta_form)
 
@@ -59,7 +65,7 @@ class PlateLoadTestApp(QWidget):
         button_layout.addWidget(clear_btn)
 
         calc_btn = QPushButton("Evaluate")
-        calc_btn.clicked.connect(lambda: evaluate_test(self))
+        calc_btn.clicked.connect(self.run_selected_method)
         button_layout.addWidget(calc_btn)
 
         export_btn = QPushButton("Export to PDF")
@@ -134,3 +140,14 @@ class PlateLoadTestApp(QWidget):
     def show_fullscreen_graph(self):
         self.graph_window = GraphWindow(self.figure)
         self.graph_window.show()
+
+    def run_selected_method(self):
+        method = self.method_selector.currentText()
+        if method == "DIN 18134 official method (2nd-degree curve fit)":
+            from data_handler import evaluate_test_curve_fit
+            evaluate_test_curve_fit(self)
+        elif method == "Practical Secant Approximation (not DIN 18134)":
+            from data_handler import evaluate_test_secant
+            evaluate_test_secant(self)
+
+    
