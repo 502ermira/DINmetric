@@ -36,7 +36,7 @@ class PlateLoadTestApp(QWidget):
         meta_form.addWidget(QLabel("Lever Ratio (hp/hm)"))
         meta_form.addWidget(self.lever_ratio)
         self.method_selector = QComboBox()
-        self.method_selector.addItems(["Secant Method", "Curve Fitting Method"])
+        self.method_selector.addItems(["DIN 18134 official method (2nd-degree curve fit)", "Practical Secant Approximation (not DIN 18134)"])
         meta_form.addWidget(QLabel("Calculation Method"))
         meta_form.addWidget(self.method_selector)
 
