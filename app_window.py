@@ -43,8 +43,8 @@ class PlateLoadTestApp(QWidget):
 
         meta_layout.addLayout(meta_form)
 
-        self.table = QTableWidget(14, 4)
-        self.table.setHorizontalHeaderLabels(["Load (kN)", "Settlement (mm)", "Cycle Type", ""])
+        self.table = QTableWidget(14, 6)
+        self.table.setHorizontalHeaderLabels(["Load (kN)", "Settlement (mm)", "Cycle Type", "Station", "Side", ""])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.currentCellChanged.connect(self.handle_cell_changed)
         self.setup_table_rows(14)
@@ -95,10 +95,13 @@ class PlateLoadTestApp(QWidget):
         combo.addItem("")
         combo.addItems(CYCLE_TYPES)
         self.table.setCellWidget(row, 2, combo)
-
+    
+        self.table.setCellWidget(row, 3, QLineEdit())  # Station
+        self.table.setCellWidget(row, 4, QLineEdit())  # Side
+    
         delete_btn = QPushButton("🗑")
         delete_btn.clicked.connect(lambda _, r=row: self.confirm_delete_row(r))
-        self.table.setCellWidget(row, 3, delete_btn)
+        self.table.setCellWidget(row, 5, delete_btn)
 
     def handle_cell_changed(self, currentRow, currentColumn, previousRow, previousColumn):
         if currentRow == self.table.rowCount() - 1 and currentColumn in [0, 1, 2]:
