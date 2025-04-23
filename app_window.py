@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (
     QWidget, QLabel, QLineEdit, QVBoxLayout, QHBoxLayout,
     QPushButton, QComboBox, QTableWidget, QTableWidgetItem,
-    QHeaderView, QMessageBox
+    QHeaderView, QMessageBox, QScrollArea, QStackedWidget
 )
 from PyQt5.QtCore import Qt
 import matplotlib.pyplot as plt
@@ -81,8 +81,29 @@ class PlateLoadTestApp(QWidget):
         layout.addWidget(QLabel("Enter Load-Settlement Data:"))
         layout.addWidget(self.table)
         layout.addLayout(button_layout)
-        layout.addWidget(self.canvas)
-        layout.addWidget(self.result_label)
+        self.graph_scroll = QScrollArea()
+        self.graph_container = QWidget()
+
+        self.graphs_stack = QStackedWidget()
+        self.graph_container.setLayout(QVBoxLayout())
+        self.graph_container.layout().addWidget(self.graphs_stack)
+
+        self.graph_scroll.setWidgetResizable(True)
+        self.graph_scroll.setWidget(self.graph_container)
+        
+        layout.addWidget(self.graph_scroll)
+        nav_layout = QHBoxLayout()
+        self.prev_btn = QPushButton("⬅️ Previous")
+        self.next_btn = QPushButton("Next ➡️")
+        
+        self.prev_btn.clicked.connect(self.show_prev_graph)
+        self.next_btn.clicked.connect(self.show_next_graph)
+        
+        nav_layout.addWidget(self.prev_btn)
+        nav_layout.addStretch()
+        nav_layout.addWidget(self.next_btn)
+        
+        layout.addLayout(nav_layout)
 
         self.setLayout(layout)
 
@@ -154,3 +175,12 @@ class PlateLoadTestApp(QWidget):
             evaluate_test_secant(self)
 
     
+    def show_prev_graph(self):
+        index = self.graphs_stack.currentIndex()
+        if index > 0:
+            self.graphs_stack.setCurrentIndex(index - 1)
+    
+    def show_next_graph(self):
+        index = self.graphs_stack.currentIndex()
+        if index < self.graphs_stack.count() - 1:
+            self.graphs_stack.setCurrentIndex(index + 1)
