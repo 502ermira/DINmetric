@@ -212,7 +212,7 @@ def evaluate_test_curve_fit(app):
 
             group_result_lines = [f"<b>Group: Station={station}, Side={side}</b>"]
             ev_results = []
-            group_color = color_cycle[group_index % len(color_cycle)]
+            cycle_colors = {cycle: color_cycle[i % len(color_cycle)] for i, cycle in enumerate(CYCLE_TYPES)}
             first_cycle_sigma_max = None
 
             for cycle in CYCLE_TYPES:
@@ -231,7 +231,7 @@ def evaluate_test_curve_fit(app):
                         marker=cycle_markers[cycle],
                         linestyle='None',
                         label=f"{cycle}",
-                        color=group_color)
+                        color=cycle_colors[cycle])
 
                 if "Loading" in cycle:
                     fit_stress = stress
@@ -261,7 +261,7 @@ def evaluate_test_curve_fit(app):
 
                     sigma_range = np.linspace(np.min(fit_stress), np.max(fit_stress), 200)
                     fit_curve = a0 + a1 * sigma_range + a2 * sigma_range ** 2
-                    ax.plot(sigma_range, fit_curve, '--', color=group_color,
+                    ax.plot(sigma_range, fit_curve, '--', color=cycle_colors[cycle],
                             label=f"{cycle} Fit")
 
                     if cycle == "First Loading":
