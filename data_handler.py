@@ -89,6 +89,25 @@ def evaluate_test_secant(app):
                 ax.plot(stress, settlements, marker=cycle_markers[cycle], linestyle='None',
                         label=cycle, color=colors[cycle])
 
+                # Use actual data only, i.e., skip preload from fit if desired
+                fit_stress = stress[1:] if cycle == "First Loading" and len(stress) > 2 else stress
+                fit_settlements = settlements[1:] if cycle == "First Loading" and len(settlements) > 2 else settlements
+
+                if cycle == "First Loading":
+                    # Mark the actual first point (optional)
+                    ax.plot(stress[0], settlements[0], marker='o', color='gray', markersize=6)
+                    ax.annotate('Preload', xy=(stress[0], settlements[0]), xytext=(5, 5),
+                                textcoords='offset points', fontsize=8, color='gray')
+
+                if len(fit_stress) >= 3:
+                    coeffs = np.polyfit(fit_stress, fit_settlements, 2)
+                    poly_curve = np.poly1d(coeffs)
+                    sigma_min = np.min(fit_stress)
+                    sigma_max = np.max(fit_stress)
+                    sigma_range = np.linspace(0, 1.2 * sigma_max, 200)
+                    settlement_fit = poly_curve(sigma_range)
+                    ax.plot(sigma_range, settlement_fit, linestyle='--', color=colors[cycle], label=f"{cycle} Fit")
+
                 if "Loading" in cycle:
                     sigma_max = np.max(stress)
                     if cycle == "First Loading":
@@ -117,9 +136,14 @@ def evaluate_test_secant(app):
                     })
 
                     ax.plot([sigma1, sigma2], [s1, s2], 'k-', lw=1.5, label=f"{cycle} Secant")
+
                     for val, label in zip([sigma1, sigma2, sigma_max], ["σ₁", "σ₂", "σ₃=σ_max"]):
                         ax.axvline(x=val, color='black', linestyle=':', linewidth=0.8)
                         ax.text(val, ax.get_ylim()[0], label, rotation=0, ha='center', va='bottom')
+
+                    for s_val, s_label in zip([s1, s2], [f"s₁ ({cycle[0]})", f"s₂ ({cycle[0]})"]):
+                        ax.axhline(y=s_val, color='gray', linestyle='--', linewidth=0.8)
+                        ax.text(ax.get_xlim()[0], s_val, s_label, ha='left', va='bottom', fontsize=8, color='gray')
 
             for ev in ev_results:
                 group_result_lines.append(
@@ -136,7 +160,7 @@ def evaluate_test_secant(app):
 
             group_result_lines.append("<hr>")
 
-            ax.legend()
+            ax.legend(loc='upper right', fontsize='small')
             ax.invert_yaxis()
 
             canvas = FigureCanvas(fig)
@@ -158,7 +182,7 @@ def evaluate_test_secant(app):
     except Exception as e:
         print("!!! ERROR:", str(e))
         QMessageBox.critical(app, "Evaluation Error", str(e))
-
+        
 
 def evaluate_test_curve_fit(app):
     try:
