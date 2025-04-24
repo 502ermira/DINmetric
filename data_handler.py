@@ -242,21 +242,23 @@ def evaluate_test_curve_fit(app):
                     ax.plot(stress, settlements, marker=cycle_markers[cycle],
                             linestyle='None', label=f"{cycle}", color=cycle_colors[cycle])
 
+                # Fit curve for all cycles (including Unloading)
+                if cycle == "First Loading" and len(stress) > 2:
+                    fit_stress = stress[1:]
+                    fit_settl = settlements[1:]
+                else:
+                    fit_stress = stress
+                    fit_settl = settlements
+
+                coeffs = np.polyfit(fit_stress, fit_settl, 2)
+                a2, a1, a0 = coeffs
+
+                sigma_range = np.linspace(np.min(stress), np.max(stress), 200)
+                fit_curve = a0 + a1 * sigma_range + a2 * sigma_range ** 2
+                ax.plot(sigma_range, fit_curve, '-', color=cycle_colors[cycle], label=f"{cycle} Fit")
+
+                # Ev calculation only for Loading cycles
                 if "Loading" in cycle:
-                    if cycle == "First Loading" and len(stress) > 2:
-                        fit_stress = stress[1:]
-                        fit_settl = settlements[1:]
-                    else:
-                        fit_stress = stress
-                        fit_settl = settlements
-
-                    coeffs = np.polyfit(fit_stress, fit_settl, 2)
-                    a2, a1, a0 = coeffs
-
-                    sigma_range = np.linspace(np.min(stress), np.max(stress), 200)
-                    fit_curve = a0 + a1 * sigma_range + a2 * sigma_range ** 2
-                    ax.plot(sigma_range, fit_curve, '-', color=cycle_colors[cycle], label=f"{cycle} Fit")
-
                     if cycle == "First Loading":
                         sigma_max = np.max(fit_stress)
                         first_cycle_sigma_max = sigma_max
@@ -278,12 +280,26 @@ def evaluate_test_curve_fit(app):
                         sigma2 = SIGMA_RATIO_2 * sigma_max
                         s1 = a0 + a1 * sigma1 + a2 * sigma1 ** 2
                         s2 = a0 + a1 * sigma2 + a2 * sigma2 ** 2
+                    
+                        # Plot secant line between (σ₁, s₁) and (σ₂, s₂)
                         ax.plot([sigma1, sigma2], [s1, s2], 'k-', lw=1.5)
-                        for val, label in zip([sigma1, sigma2, sigma_max],
-                                              ["σ₁", "σ₂", "σ₃=σ_max"]):
+                    
+                        # Vertical reference lines and labels at σ₁, σ₂, σ₃=σ_max
+                        for val, label in zip(
+                            [sigma1, sigma2, sigma_max],
+                            [f"σ₁ ({SIGMA_RATIO_1:.1f}σ₃)", f"σ₂ ({SIGMA_RATIO_2:.1f}σ₃)", "σ₃=σ_max"]
+                        ):
                             ax.axvline(x=val, color='black', linestyle=':', linewidth=0.8)
                             ax.text(val, ax.get_ylim()[0], label, rotation=0, ha='center', va='bottom')
-
+                    
+                        # Horizontal lines at s₁ and s₂
+                        ax.axhline(y=s1, color='black', linestyle=':', linewidth=0.8)
+                        ax.axhline(y=s2, color='black', linestyle=':', linewidth=0.8)
+                        # Label s1 and s2 on the y-axis
+                        x_offset = ax.get_xlim()[0] - 0.003 * (ax.get_xlim()[1] - ax.get_xlim()[0])
+                        ax.text(x_offset, s1, "s₁", va='center', ha='right')
+                        ax.text(x_offset, s2, "s₂", va='center', ha='right')
+                        
             for ev in ev_results:
                 group_result_lines.append(
                     f"&nbsp;&nbsp;<b>{ev['cycle']}:</b> Ev = {ev['Ev']:.2f} MN/m²<br>"
