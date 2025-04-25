@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (
     QWidget, QLabel, QLineEdit, QVBoxLayout, QHBoxLayout,
     QPushButton, QComboBox, QTableWidget, QTableWidgetItem,
-    QHeaderView, QMessageBox, QScrollArea, QStackedWidget
+    QHeaderView, QMessageBox, QScrollArea, QStackedWidget, QStyle, QFormLayout
 )
 from PyQt5.QtCore import Qt
 import matplotlib.pyplot as plt
@@ -18,94 +18,179 @@ class PlateLoadTestApp(QWidget):
         super().__init__()
         self.setWindowTitle("DIN 18134 - Plate Load Test")
         self.setMinimumSize(1100, 750)
+        self.sidebar_expanded = False
         self.init_ui()
 
     def init_ui(self):
-        meta_layout = QHBoxLayout()
+        self.sidebar_widget = QWidget()
+        self.sidebar_widget.setMinimumWidth(0)
+        self.sidebar_widget.setMaximumWidth(0)
+        self.sidebar_layout = QVBoxLayout()
+        self.sidebar_widget.setLayout(self.sidebar_layout)
 
+        toggle_button = QPushButton("☰")
+        toggle_button.setFixedWidth(30)
+        toggle_button.clicked.connect(self.toggle_sidebar)
+
+        # --- Top form: Meta Information ---
+        top_form_layout = QVBoxLayout()
+        form_layout = QFormLayout()
+
+        # --- Logos ---
+        logos_layout = QVBoxLayout()
+        self.company_logo_btn = QPushButton("Upload Company Logo")
+        self.accreditation_logo_btn = QPushButton("Upload Accreditation Logo")
+        logos_layout.addWidget(self.company_logo_btn)
+        logos_layout.addWidget(self.accreditation_logo_btn)
+        self.sidebar_layout.addLayout(logos_layout)
+
+        def make_row(*widgets):
+            row = QHBoxLayout()
+            for label_text, widget in widgets:
+                row.addWidget(QLabel(label_text))
+                row.addWidget(widget)
+            return row
+
+        # --- Sidebar Content ---
+        sidebar_info = [
+            ("Test Id", QLineEdit()),
+            ("Company Name", QLineEdit()),
+            ("Slogan", QLineEdit()),
+            ("Code", QLineEdit()),
+            ("Version", QLineEdit()),
+            ("Date", QLineEdit()),
+            ("Other Info", QLineEdit()),
+            ("Client Name", QLineEdit()),
+            ("Project Name", QLineEdit()),
+            ("Contractor's Name", QLineEdit()),
+            ("Request Number", QLineEdit()),
+            ("Weather / Temperature", QLineEdit()),
+            ("Designed & Confirmed By", QLineEdit()),
+            ("Measurements Done By", QLineEdit()),
+            ("Supervisor", QLineEdit()),
+            ("Laboratory", QLineEdit()),
+            ("Type of Measurement", QLineEdit())
+        ]
+
+        for label, field in sidebar_info:
+            self.sidebar_layout.addLayout(make_row((label, field)))
+
+        (self.test_id ,self.company_name, self.company_slogan, self.code, self.version,
+         self.date, self.other_info, self.client_name, self.project_name,
+         self.contractor_name, self.request_number, self.weather_temp,
+         self.designed_by, self.measured_by, self.supervisor, self.laboratory,
+         self.measurement_type) = [field for _, field in sidebar_info]
+
+        # --- Always Visible Fields ---
         self.test_id = QLineEdit()
         self.plate_diameter = QComboBox()
         self.plate_diameter.addItems(["300", "600", "762"])
         self.lever_ratio = QLineEdit("1.000")
-
-        meta_form = QVBoxLayout()
-        meta_form.addWidget(QLabel("Test ID"))
-        meta_form.addWidget(self.test_id)
-        meta_form.addWidget(QLabel("Plate Diameter (mm)"))
-        meta_form.addWidget(self.plate_diameter)
-        meta_form.addWidget(QLabel("Lever Ratio (hp/hm)"))
-        meta_form.addWidget(self.lever_ratio)
         self.method_selector = QComboBox()
-        self.method_selector.addItems(["DIN 18134 official method (2nd-degree curve fit)", "Practical Secant Approximation (not DIN 18134)"])
-        meta_form.addWidget(QLabel("Calculation Method"))
-        meta_form.addWidget(self.method_selector)
+        self.method_selector.addItems([
+            "DIN 18134 official method (2nd-degree curve fit)",
+            "Practical Secant Approximation (not DIN 18134)"
+        ])
 
+        form_layout.setLabelAlignment(Qt.AlignRight)
+        form_layout.addRow("Plate Diameter (mm)", self.plate_diameter)
+        form_layout.addRow("Lever Ratio (hp/hm)", self.lever_ratio)
+        form_layout.addRow("Calculation Method", self.method_selector)
 
-        meta_layout.addLayout(meta_form)
+        top_form_layout.addWidget(toggle_button)
+        top_form_layout.addLayout(form_layout)
+        top_form_layout.setContentsMargins(0, 0, 0, 36)
 
+        # --- Table: Load-Settlement Data ---
         self.table = QTableWidget(14, 6)
-        self.table.setHorizontalHeaderLabels(["Load (kN)", "Settlement (mm)", "Cycle Type", "Station", "Side", ""])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.currentCellChanged.connect(self.handle_cell_changed)
-        self.setup_table_rows(14)
+        self.table.setHorizontalHeaderLabels([
+            "Load (kN)", "Settlement (mm)", "Cycle Type",
+            "Station", "Side", ""
+        ])
+        for col in range(6):
+            self.table.horizontalHeader().setSectionResizeMode(col, QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
+        for row in range(14):
+            self.setup_row(row)
 
+        # --- Action Buttons ---
+        action_buttons_layout = QHBoxLayout()
         self.add_row_btn = QPushButton("➕ Add Row")
-        self.add_row_btn.clicked.connect(self.add_row)
-
-        self.figure, self.ax = plt.subplots()
-        self.canvas = FigureCanvas(self.figure)
-
-        self.result_label = QLabel("\nResults will be shown here.")
-
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(self.add_row_btn)
-
         clear_btn = QPushButton("Clear")
-        clear_btn.clicked.connect(self.clear_fields)
-        button_layout.addWidget(clear_btn)
-
         calc_btn = QPushButton("Evaluate")
-        calc_btn.clicked.connect(self.run_selected_method)
-        button_layout.addWidget(calc_btn)
-
         export_btn = QPushButton("Export to PDF")
-        export_btn.clicked.connect(lambda: export_to_pdf(self))
-        button_layout.addWidget(export_btn)
-
         maximize_btn = QPushButton("Maximize Graph")
-        maximize_btn.clicked.connect(self.show_fullscreen_graph)
-        button_layout.addWidget(maximize_btn)
 
-        layout = QVBoxLayout()
-        layout.addLayout(meta_layout)
-        layout.addWidget(QLabel("Enter Load-Settlement Data:"))
-        layout.addWidget(self.table)
-        layout.addLayout(button_layout)
-        self.graph_scroll = QScrollArea()
-        self.graph_container = QWidget()
+        action_buttons_layout.addWidget(self.add_row_btn)
+        action_buttons_layout.addWidget(clear_btn)
+        action_buttons_layout.addWidget(calc_btn)
+        action_buttons_layout.addWidget(export_btn)
+        action_buttons_layout.addWidget(maximize_btn)
+
+        self.add_row_btn.clicked.connect(self.add_row)
+        clear_btn.clicked.connect(self.clear_fields)
+        calc_btn.clicked.connect(self.run_selected_method)
+        export_btn.clicked.connect(lambda: export_to_pdf(self))
+        maximize_btn.clicked.connect(self.show_fullscreen_graph)
 
         self.graphs_stack = QStackedWidget()
+        self.graph_container = QWidget()
         self.graph_container.setLayout(QVBoxLayout())
         self.graph_container.layout().addWidget(self.graphs_stack)
 
+        self.graph_scroll = QScrollArea()
         self.graph_scroll.setWidgetResizable(True)
         self.graph_scroll.setWidget(self.graph_container)
-        
-        layout.addWidget(self.graph_scroll)
+
         nav_layout = QHBoxLayout()
         self.prev_btn = QPushButton("⬅️ Previous")
         self.next_btn = QPushButton("Next ➡️")
-        
-        self.prev_btn.clicked.connect(self.show_prev_graph)
-        self.next_btn.clicked.connect(self.show_next_graph)
-        
         nav_layout.addWidget(self.prev_btn)
         nav_layout.addStretch()
         nav_layout.addWidget(self.next_btn)
-        
-        layout.addLayout(nav_layout)
+        self.prev_btn.clicked.connect(self.show_prev_graph)
+        self.next_btn.clicked.connect(self.show_next_graph)
 
-        self.setLayout(layout)
+        center_split = QHBoxLayout()
+
+        left_panel = QVBoxLayout()
+        left_panel.addWidget(QLabel("Enter Load-Settlement Data:"))
+        left_panel.addWidget(self.table)
+        left_panel.addLayout(action_buttons_layout)
+
+        center_split.addWidget(self.sidebar_widget, stretch=1)
+        center_split.addLayout(left_panel, stretch=4)
+
+        right_panel = QVBoxLayout()
+        right_panel.addWidget(self.graph_scroll)
+        right_panel.addLayout(nav_layout)
+        center_split.addLayout(right_panel, stretch=4)
+
+        # Combine top form and center content into one vertical layout
+        main_content_layout = QVBoxLayout()
+        main_content_layout.addLayout(top_form_layout)
+        main_content_layout.addLayout(center_split)
+
+        # Make a central widget to hold everything except the sidebar
+        main_content_widget = QWidget()
+        main_content_widget.setLayout(main_content_layout)
+
+        # Horizontal layout to hold sidebar + everything else
+        full_layout = QHBoxLayout()
+        full_layout.addWidget(self.sidebar_widget)
+        full_layout.addWidget(main_content_widget, stretch=1)
+
+        self.setLayout(full_layout)
+
+    def toggle_sidebar(self):
+        if self.sidebar_expanded:
+            self.sidebar_widget.setMaximumWidth(0)
+            self.sidebar_expanded = False
+        else:
+            self.sidebar_widget.setMaximumWidth(self.width() // 5)
+            self.sidebar_expanded = True
 
     def setup_table_rows(self, num_rows):
         for row in range(num_rows):
@@ -116,17 +201,15 @@ class PlateLoadTestApp(QWidget):
         combo.addItem("")
         combo.addItems(CYCLE_TYPES)
         self.table.setCellWidget(row, 2, combo)
-    
-        self.table.setCellWidget(row, 3, QLineEdit())  # Station
-        self.table.setCellWidget(row, 4, QLineEdit())  # Side
-    
-        delete_btn = QPushButton("🗑")
+
+        self.table.setCellWidget(row, 3, QLineEdit())
+        self.table.setCellWidget(row, 4, QLineEdit())
+
+        delete_btn = QPushButton()
+        delete_btn.setIcon(self.style().standardIcon(QStyle.SP_TrashIcon))
+        delete_btn.setToolTip("Delete row")
         delete_btn.clicked.connect(lambda _, r=row: self.confirm_delete_row(r))
         self.table.setCellWidget(row, 5, delete_btn)
-
-    def handle_cell_changed(self, currentRow, currentColumn, previousRow, previousColumn):
-        if currentRow == self.table.rowCount() - 1 and currentColumn in [0, 1, 2]:
-            self.add_row()
 
     def add_row(self):
         row_position = self.table.rowCount()
@@ -141,9 +224,10 @@ class PlateLoadTestApp(QWidget):
         if reply == QMessageBox.Yes:
             self.table.removeRow(row)
             for i in range(self.table.rowCount()):
-                delete_btn = QPushButton("🗑")
+                delete_btn = QPushButton()
+                delete_btn.setIcon(self.style().standardIcon(QStyle.SP_TrashIcon))
                 delete_btn.clicked.connect(lambda _, r=i: self.confirm_delete_row(r))
-                self.table.setCellWidget(i, 3, delete_btn)
+            self.table.setCellWidget(i, 5, delete_btn)
 
     def clear_fields(self):
         self.test_id.clear()
@@ -174,12 +258,11 @@ class PlateLoadTestApp(QWidget):
             from data_handler import evaluate_test_secant
             evaluate_test_secant(self)
 
-    
     def show_prev_graph(self):
         index = self.graphs_stack.currentIndex()
         if index > 0:
             self.graphs_stack.setCurrentIndex(index - 1)
-    
+
     def show_next_graph(self):
         index = self.graphs_stack.currentIndex()
         if index < self.graphs_stack.count() - 1:
