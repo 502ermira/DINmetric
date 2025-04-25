@@ -13,11 +13,12 @@ from data_handler import evaluate_test_curve_fit
 from pdf_exporter import export_to_pdf
 from graph_window import GraphWindow
 
+
 class PlateLoadTestApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("DIN 18134 - Plate Load Test")
-        self.setMinimumSize(1100, 750)
+        self.setMinimumSize(900, 650)
         self.sidebar_expanded = False
         self.init_ui()
 
@@ -28,9 +29,14 @@ class PlateLoadTestApp(QWidget):
         self.sidebar_layout = QVBoxLayout()
         self.sidebar_widget.setLayout(self.sidebar_layout)
 
-        toggle_button = QPushButton("☰")
-        toggle_button.setFixedWidth(30)
-        toggle_button.clicked.connect(self.toggle_sidebar)
+        self.toggle_button = QPushButton("⬅️  Show Test Info")
+        self.toggle_button.setObjectName("sidebarToggle")
+        self.toggle_button.clicked.connect(self.toggle_sidebar)
+        self.toggle_button.setCursor(Qt.PointingHandCursor)
+        hint_width = self.toggle_button.sizeHint().width()
+        self.toggle_button.setFixedWidth(hint_width + 12) 
+        scale_factor = self.devicePixelRatioF()
+        self.toggle_button.setFixedWidth(int((hint_width + 12) * scale_factor))
 
         # --- Top form: Meta Information ---
         top_form_layout = QVBoxLayout()
@@ -92,14 +98,26 @@ class PlateLoadTestApp(QWidget):
             "Practical Secant Approximation (not DIN 18134)"
         ])
 
+        form_layout.setFormAlignment(Qt.AlignLeft)
         form_layout.setLabelAlignment(Qt.AlignRight)
+        form_layout.setHorizontalSpacing(23)
+
         form_layout.addRow("Plate Diameter (mm)", self.plate_diameter)
         form_layout.addRow("Lever Ratio (hp/hm)", self.lever_ratio)
         form_layout.addRow("Calculation Method", self.method_selector)
 
-        top_form_layout.addWidget(toggle_button)
+        scale_factor = self.devicePixelRatioF()
+        label_width = int(60 * scale_factor)
+        for i in range(form_layout.rowCount()):
+            label_item = form_layout.itemAt(i, QFormLayout.LabelRole)
+            if label_item:
+                label_widget = label_item.widget()
+                if label_widget:
+                    label_widget.setMinimumWidth(label_width)
+
+        top_form_layout.addWidget(self.toggle_button)
         top_form_layout.addLayout(form_layout)
-        top_form_layout.setContentsMargins(0, 0, 0, 36)
+        top_form_layout.setContentsMargins(0, 0, 0, 19)
 
         # --- Table: Load-Settlement Data ---
         self.table = QTableWidget(14, 6)
@@ -168,12 +186,12 @@ class PlateLoadTestApp(QWidget):
         right_panel.addLayout(nav_layout)
         center_split.addLayout(right_panel, stretch=4)
 
-        # Combine top form and center content into one vertical layout
+        # top form and center content combined into one vertical layout
         main_content_layout = QVBoxLayout()
         main_content_layout.addLayout(top_form_layout)
         main_content_layout.addLayout(center_split)
 
-        # Make a central widget to hold everything except the sidebar
+        # central widget that holds everything except the sidebar
         main_content_widget = QWidget()
         main_content_widget.setLayout(main_content_layout)
 
@@ -187,9 +205,11 @@ class PlateLoadTestApp(QWidget):
     def toggle_sidebar(self):
         if self.sidebar_expanded:
             self.sidebar_widget.setMaximumWidth(0)
+            self.toggle_button.setText("⬅️  Show Test Info")
             self.sidebar_expanded = False
         else:
             self.sidebar_widget.setMaximumWidth(self.width() // 5)
+            self.toggle_button.setText("➡️  Hide Test Info")
             self.sidebar_expanded = True
 
     def setup_table_rows(self, num_rows):
