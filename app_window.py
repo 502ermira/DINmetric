@@ -29,12 +29,14 @@ class PlateLoadTestApp(QWidget):
         self.sidebar_layout = QVBoxLayout()
         self.sidebar_widget.setLayout(self.sidebar_layout)
 
-        self.toggle_button = QPushButton("⬅️  Show Test Info")
+        self.toggle_button = QPushButton()
         self.toggle_button.setObjectName("sidebarToggle")
+        self.toggle_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowRight))
+        self.toggle_button.setText(" Show Report Details")
         self.toggle_button.clicked.connect(self.toggle_sidebar)
         self.toggle_button.setCursor(Qt.PointingHandCursor)
         hint_width = self.toggle_button.sizeHint().width()
-        self.toggle_button.setFixedWidth(hint_width + 12) 
+        self.toggle_button.setFixedWidth(hint_width + 12)
         scale_factor = self.devicePixelRatioF()
         self.toggle_button.setFixedWidth(int((hint_width + 12) * scale_factor))
 
@@ -135,7 +137,7 @@ class PlateLoadTestApp(QWidget):
 
         # --- Action Buttons ---
         action_buttons_layout = QHBoxLayout()
-        self.add_row_btn = QPushButton("➕ Add Row")
+        self.add_row_btn = QPushButton("Add Row")
         clear_btn = QPushButton("Clear")
         calc_btn = QPushButton("Evaluate")
         export_btn = QPushButton("Export to PDF")
@@ -163,8 +165,18 @@ class PlateLoadTestApp(QWidget):
         self.graph_scroll.setWidget(self.graph_container)
 
         nav_layout = QHBoxLayout()
-        self.prev_btn = QPushButton("⬅️ Previous")
-        self.next_btn = QPushButton("Next ➡️")
+        self.prev_btn = QPushButton()
+        self.prev_btn.setObjectName("prevButton")
+        self.prev_btn.setIcon(self.style().standardIcon(QStyle.SP_ArrowLeft))
+        self.prev_btn.setText(" Previous")
+        self.prev_btn.setCursor(Qt.PointingHandCursor)
+        
+        self.next_btn = QPushButton()
+        self.next_btn.setObjectName("nextButton")
+        self.next_btn.setIcon(self.style().standardIcon(QStyle.SP_ArrowRight))
+        self.next_btn.setText(" Next")
+        self.next_btn.setCursor(Qt.PointingHandCursor)
+
         nav_layout.addWidget(self.prev_btn)
         nav_layout.addStretch()
         nav_layout.addWidget(self.next_btn)
@@ -205,11 +217,13 @@ class PlateLoadTestApp(QWidget):
     def toggle_sidebar(self):
         if self.sidebar_expanded:
             self.sidebar_widget.setMaximumWidth(0)
-            self.toggle_button.setText("⬅️  Show Test Info")
+            self.toggle_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowLeft))
+            self.toggle_button.setText(" Show Report Details")
             self.sidebar_expanded = False
         else:
             self.sidebar_widget.setMaximumWidth(self.width() // 5)
-            self.toggle_button.setText("➡️  Hide Test Info")
+            self.toggle_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowRight))
+            self.toggle_button.setText(" Hide Report Details")
             self.sidebar_expanded = True
 
     def setup_table_rows(self, num_rows):

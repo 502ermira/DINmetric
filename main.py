@@ -6,7 +6,7 @@ from app_window import PlateLoadTestApp
 from styles import APP_STYLE
 
 if __name__ == '__main__':
-    # 👇 Enable high DPI scaling before creating the QApplication
+    # 👇 Enabled high DPI scaling before creating the QApplication
     QtWidgets.QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
     app = QApplication(sys.argv)
