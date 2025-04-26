@@ -190,6 +190,8 @@ def evaluate_test_secant(app):
             ax.legend(fontsize=6, markerscale=0.7, handlelength=0.7)
             ax.invert_yaxis()
 
+            fig.tight_layout()
+
             canvas = FigureCanvas(fig)
             page_widget = QWidget()
             page_layout = QVBoxLayout()
@@ -431,6 +433,8 @@ def evaluate_test_curve_fit(app):
 
             ax.legend(fontsize=6, markerscale=0.7, handlelength=0.7)
             ax.invert_yaxis()
+
+            fig.tight_layout()
 
             canvas = FigureCanvas(fig)
             page_widget = QWidget()
