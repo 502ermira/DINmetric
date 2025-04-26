@@ -161,6 +161,8 @@ class PlateLoadTestApp(QWidget):
         self.graph_container.layout().addWidget(self.graphs_stack)
 
         self.graph_scroll = QScrollArea()
+        self.graph_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.graph_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.graph_scroll.setWidgetResizable(True)
         self.graph_scroll.setWidget(self.graph_container)
 

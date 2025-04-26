@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
-from PyQt5.QtWidgets import QVBoxLayout, QWidget, QMessageBox, QLabel
+from PyQt5.QtWidgets import QVBoxLayout, QWidget, QMessageBox, QLabel, QTableWidget, QTableWidgetItem, QSizePolicy, QHBoxLayout, QAbstractScrollArea
 from PyQt5.QtCore import Qt
 from constants import CYCLE_TYPES
 from collections import defaultdict
@@ -335,7 +335,7 @@ def evaluate_test_curve_fit(app):
             ev2 = next((ev['Ev'] for ev in ev_results if ev['cycle'] == "Second Loading"), None)
             if ev1 and ev2:
                 group_result_lines.append(f"<b>&nbsp;&nbsp;Ev Ratio (Ev2 / Ev1):</b> {ev2 / ev1:.2f}")
-
+                
             group_result_lines.append("<hr>")
             result_lines.extend(group_result_lines)
 
@@ -346,10 +346,61 @@ def evaluate_test_curve_fit(app):
             page_widget = QWidget()
             page_layout = QVBoxLayout()
             page_layout.addWidget(canvas)
-            result_lbl = QLabel("<br>".join(group_result_lines))
-            result_lbl.setWordWrap(True)
-            result_lbl.setTextFormat(Qt.RichText)
-            page_layout.addWidget(result_lbl)
+            # Create styled table for Ev results
+            ev_table = QTableWidget()
+            ev_table.setObjectName("evResultsTable")
+            ev_table.setColumnCount(7)
+            ev_table.setHorizontalHeaderLabels([
+                " ", " σ₃ (MN/m²) ", " a₀ ", " a₁ ", " a₂ ", " Ev (MN/m²) ", " Ev₂ / Ev₁ "
+            ])
+            ev_table.verticalHeader().setVisible(False)
+            ev_table.setEditTriggers(QTableWidget.NoEditTriggers)
+            ev_table.setSelectionMode(QTableWidget.NoSelection)
+            ev_table.setFocusPolicy(Qt.NoFocus)
+            
+            ev_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            
+            # Populate rows
+            ev_table.setRowCount(len(ev_results))
+            for i, ev in enumerate(ev_results):
+                ev_table.setItem(i, 0, QTableWidgetItem(str(i + 1)))
+                ev_table.setItem(i, 1, QTableWidgetItem(f" {ev['sigma_max']:.3f} "))
+                ev_table.setItem(i, 2, QTableWidgetItem(f" {ev['a0']:.4f} "))
+                ev_table.setItem(i, 3, QTableWidgetItem(f" {ev['a1']:.4f} "))
+                ev_table.setItem(i, 4, QTableWidgetItem(f" {ev['a2']:.4f} "))
+                ev_table.setItem(i, 5, QTableWidgetItem(f" {ev['Ev']:.1f} "))
+            
+            # Merge Ev2/Ev1 column
+            if ev1 and ev2:
+                ev2_ev1_value = f" {ev2 / ev1:.2f} "
+            
+                merged_item = QTableWidgetItem(ev2_ev1_value)
+                merged_item.setTextAlignment(Qt.AlignCenter)
+                ev_table.setItem(0, 6, merged_item)
+            
+                # Merge the Ev2/Ev1 column cells vertically across all rows
+                ev_table.setSpan(0, 6, len(ev_results), 1)
+            
+            # Add table to layout
+            ev_table.resizeColumnsToContents()
+
+            total_width = sum([ev_table.columnWidth(i) for i in range(ev_table.columnCount())])
+            ev_table.setMinimumWidth(total_width + ev_table.verticalHeader().width() + 2)
+            # Prevent vertical scrolling
+            ev_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            
+            # Resize rows to content
+            ev_table.resizeRowsToContents()
+            
+            ev_table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+            table_container = QHBoxLayout()
+            table_container.addStretch(1)
+            table_container.addWidget(ev_table)
+            table_container.addStretch(1)
+            page_layout.addLayout(table_container)
+
+            page_layout.addStretch(1)
+            page_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             page_widget.setLayout(page_layout)
             app.graphs_stack.addWidget(page_widget)
 

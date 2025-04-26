@@ -4,7 +4,7 @@ QWidget {
     font-family: 'Segoe UI', Arial, sans-serif;
     font-size: 12px;
     color: #333333;
-    background-color: #f8f8f8;
+    background-color: #f9f9f9;
 }
 
 /* Sidebar Styling */
@@ -58,10 +58,6 @@ QComboBox {
     background-color: white;
 }
 
-QComboBox::drop-down {
-    subcontrol-origin: padding;
-}
-
 QComboBox:hover {
     border-color: #c0c0c0;
 }
@@ -69,10 +65,29 @@ QComboBox:hover {
 /* Table Widget */
 QTableWidget {
     background-color: white;
-    border: 1px solid #d0d0d0;
-    gridline-color: #e0e0e0;
+    border: 1px solid #ccc;
+    gridline-color: #aaa;
     selection-background-color: #e0e0e0;
     selection-color: #333333;
+}
+
+QTableWidget QLineEdit {
+    background-color: white;
+    border: none;
+    selection-background-color: #e0e0e0;
+    selection-color: #333333;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    outline: none;
+}
+
+QTableWidget QComboBox {
+    border: none;
+    background-color: white;
+    outline: none;
 }
 
 QHeaderView::section {
@@ -93,12 +108,12 @@ QTableCornerButton::section {
 /* Scroll Area */
 QScrollArea {
     border: 1px solid #d0d0d0;
-    background-color: white;
+    background-color: 111;
 }
 
 /* Form Layout Labels */
 QLabel {
-    font-weight: 500;
+    font-weight: normal;
 }
 
 /* Message Box */
@@ -110,13 +125,15 @@ QMessageBox QLabel {
     font-size: 12px;
 }
 
-QMessageBox QPushButton {
-    min-width: 80px;
-}
-
 /* Graph Container */
 GraphCanvas {
-    background-color: white;
     border: 1px solid #d0d0d0;
 }
+
+
+QTableWidget#evResultsTable::item {
+    font-size: 16px;
+}
+
+
 """
