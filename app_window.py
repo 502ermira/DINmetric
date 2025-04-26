@@ -1,11 +1,12 @@
 from PyQt5.QtWidgets import (
-    QWidget, QLabel, QLineEdit, QVBoxLayout, QHBoxLayout,
-    QPushButton, QComboBox, QTableWidget, QTableWidgetItem,
+    QWidget, QLabel, QLineEdit, QVBoxLayout, QHBoxLayout, QFrame, QStackedWidget,
+    QPushButton, QComboBox, QTableWidget, QTableWidgetItem, QFileDialog, QSizePolicy,
     QHeaderView, QMessageBox, QScrollArea, QStackedWidget, QStyle, QFormLayout
 )
 from PyQt5.QtCore import Qt
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from PyQt5.QtGui import QPixmap, QIcon
 
 from constants import CYCLE_TYPES
 from data_handler import evaluate_test_secant
@@ -46,11 +47,107 @@ class PlateLoadTestApp(QWidget):
 
         # --- Logos ---
         logos_layout = QVBoxLayout()
-        self.company_logo_btn = QPushButton("Upload Company Logo")
-        self.accreditation_logo_btn = QPushButton("Upload Accreditation Logo")
-        logos_layout.addWidget(self.company_logo_btn)
-        logos_layout.addWidget(self.accreditation_logo_btn)
+        
+        # Company Logo Upload
+        company_layout = QHBoxLayout()
+        self.company_logo_btn = QPushButton("Add Company Logo")
+        self.company_logo_btn.setCursor(Qt.PointingHandCursor)
+        self.company_logo_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        # Company Logo Container
+        self.company_logo_container = QFrame()
+        self.company_logo_container.setFixedSize(70, 35)
+        self.company_logo_container.setLayout(QVBoxLayout())
+        self.company_logo_container.layout().setContentsMargins(0, 0, 0, 0)
+        self.company_logo_container.layout().setSpacing(0)
+        
+        # Company Logo Preview
+        self.company_logo_preview = QLabel(self.company_logo_container)
+        self.company_logo_preview.setAlignment(Qt.AlignCenter)
+        self.company_logo_preview.setFixedSize(70, 35)
+        
+        # Company Logo Remove Button
+        self.company_logo_remove_btn = QPushButton("×", self.company_logo_container)
+        self.company_logo_remove_btn.setFixedSize(16, 16)
+        self.company_logo_remove_btn.move(70 - 16, 0)
+        self.company_logo_remove_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #e57373;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #ef5350;
+            }
+        """)
+        self.company_logo_remove_btn.setCursor(Qt.PointingHandCursor)
+        self.company_logo_remove_btn.hide()
+        self.company_logo_remove_btn.clicked.connect(self.remove_company_logo)
+        
+        self.company_logo_container.layout().addWidget(self.company_logo_preview)
+        self.company_logo_container.hide()
+        
+        company_layout.addWidget(self.company_logo_btn)
+        company_layout.addWidget(self.company_logo_container)
+        company_layout.setAlignment(Qt.AlignLeft)
+        
+        # Accreditation Logo Upload
+        accreditation_layout = QHBoxLayout()
+        self.accreditation_logo_btn = QPushButton("Add Accreditation Logo")
+        self.accreditation_logo_btn.setCursor(Qt.PointingHandCursor)
+        self.accreditation_logo_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
+        # Accreditation Logo Container
+        self.accreditation_logo_container = QFrame()
+        self.accreditation_logo_container.setFixedSize(70, 35)
+        self.accreditation_logo_container.setLayout(QVBoxLayout())
+        self.accreditation_logo_container.layout().setContentsMargins(0, 0, 0, 0)
+        self.accreditation_logo_container.layout().setSpacing(0)
+        
+        # Accreditation Logo Preview
+        self.accreditation_logo_preview = QLabel(self.accreditation_logo_container)
+        self.accreditation_logo_preview.setAlignment(Qt.AlignCenter)
+        self.accreditation_logo_preview.setFixedSize(70, 35)
+        
+        # Accreditation Logo Remove Button
+        self.accreditation_logo_remove_btn = QPushButton("×", self.accreditation_logo_container)
+        self.accreditation_logo_remove_btn.setFixedSize(16, 16)
+        self.accreditation_logo_remove_btn.move(70 - 16, 0)
+        self.accreditation_logo_remove_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #e57373;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #ef5350;
+            }
+        """)
+        self.accreditation_logo_remove_btn.setCursor(Qt.PointingHandCursor)
+        self.accreditation_logo_remove_btn.hide()
+        self.accreditation_logo_remove_btn.clicked.connect(self.remove_accreditation_logo)
+        
+        self.accreditation_logo_container.layout().addWidget(self.accreditation_logo_preview)
+        self.accreditation_logo_container.hide()
+        
+        accreditation_layout.addWidget(self.accreditation_logo_btn)
+        accreditation_layout.addWidget(self.accreditation_logo_container)
+        accreditation_layout.setAlignment(Qt.AlignLeft)
+        
+        self.company_logo_path = None
+        self.accreditation_logo_path = None
+        
+        self.company_logo_btn.clicked.connect(self.upload_company_logo)
+        self.accreditation_logo_btn.clicked.connect(self.upload_accreditation_logo)
+        
+        logos_layout.addLayout(company_layout)
+        logos_layout.addLayout(accreditation_layout)
         self.sidebar_layout.addLayout(logos_layout)
+
 
         def make_row(*widgets):
             row = QHBoxLayout()
@@ -303,3 +400,38 @@ class PlateLoadTestApp(QWidget):
         index = self.graphs_stack.currentIndex()
         if index < self.graphs_stack.count() - 1:
             self.graphs_stack.setCurrentIndex(index + 1)
+
+    def upload_company_logo(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Add Company Logo", "", "Image Files (*.png *.jpg *.jpeg *.bmp)")
+        if file_path:
+            self.company_logo_path = file_path
+            pixmap = QPixmap(file_path).scaled(self.company_logo_preview.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.company_logo_preview.setPixmap(pixmap)
+            self.company_logo_container.show() 
+            self.company_logo_remove_btn.show()
+            self.company_logo_btn.setText("Change Company Logo")
+
+    def upload_accreditation_logo(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Add Accreditation Logo", "", "Image Files (*.png *.jpg *.jpeg *.bmp)")
+        if file_path:
+            self.accreditation_logo_path = file_path
+            pixmap = QPixmap(file_path).scaled(self.accreditation_logo_preview.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.accreditation_logo_preview.setPixmap(pixmap)
+            self.accreditation_logo_container.show() 
+            self.accreditation_logo_remove_btn.show()
+            self.accreditation_logo_btn.setText("Change Accreditation Logo")
+
+    def remove_company_logo(self):
+        self.company_logo_path = None
+        self.company_logo_preview.clear()
+        self.company_logo_container.hide()
+        self.company_logo_remove_btn.hide()
+        self.company_logo_btn.setText("Add Company Logo")
+    
+
+    def remove_accreditation_logo(self):
+        self.accreditation_logo_path = None
+        self.accreditation_logo_preview.clear()
+        self.accreditation_logo_container.hide()
+        self.accreditation_logo_remove_btn.hide()
+        self.accreditation_logo_btn.setText("Add Accreditation Logo")

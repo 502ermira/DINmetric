@@ -17,10 +17,22 @@ def export_to_pdf(app):
         c.setFont("Helvetica-Bold", 16)
         c.drawCentredString(width / 2, height - 30, "LOAD TEST PLATE - DIN 18134")
 
-        # Metadata
-        c.setFont("Helvetica", 10)
         y = height - 50
         spacing = 14
+
+        # Insert Logos if available
+        logo_max_width = 100
+        logo_max_height = 50
+
+        if app.company_logo_path:
+            c.drawImage(app.company_logo_path, 40, y - logo_max_height, width=logo_max_width, height=logo_max_height, preserveAspectRatio=True, mask='auto')
+
+        if app.accreditation_logo_path:
+            c.drawImage(app.accreditation_logo_path, width - logo_max_width - 40, y - logo_max_height, width=logo_max_width, height=logo_max_height, preserveAspectRatio=True, mask='auto')
+
+        y -= (logo_max_height + 20)
+        # Metadata
+        c.setFont("Helvetica", 10)
         meta_fields = [
             ("Test ID:", app.test_id.text()),
             ("Plate Diameter:", app.plate_diameter.currentText() + " mm"),
@@ -53,7 +65,7 @@ def export_to_pdf(app):
         c.save()
 
         QMessageBox.information(app, "Export Complete", f"PDF exported to:\n{filepath}")
-        os.startfile(filepath)  # Opens the file on Windows (optional)
+        os.startfile(filepath)
     except Exception as e:
         QMessageBox.critical(app, "Export Error", str(e))
     
