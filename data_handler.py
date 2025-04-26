@@ -168,10 +168,53 @@ def evaluate_test_secant(app):
             page_layout = QVBoxLayout()
             page_layout.addWidget(canvas)
 
-            result_lbl = QLabel("<br>".join(group_result_lines))
-            result_lbl.setWordWrap(True)
-            result_lbl.setTextFormat(Qt.RichText)
-            page_layout.addWidget(result_lbl)
+            ev_table = QTableWidget()
+            ev_table.setObjectName("evResultsTable")
+            ev_table.setColumnCount(7)
+            ev_table.setHorizontalHeaderLabels([
+                " Cycle ", " σ₃ (MN/m²) ", " σ₁ (MN/m²) ", " σ₂ (MN/m²) ", " s₁ (mm) ", " s₂ (mm) ", " Ev (MN/m²) "
+            ])
+            ev_table.verticalHeader().setVisible(False)
+            ev_table.setEditTriggers(QTableWidget.NoEditTriggers)
+            ev_table.setSelectionMode(QTableWidget.NoSelection)
+            ev_table.setFocusPolicy(Qt.NoFocus)
+            ev_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            
+            # Fill the table
+            ev_table.setRowCount(len(ev_results))
+            for i, ev in enumerate(ev_results):
+                ev_table.setItem(i, 0, QTableWidgetItem(ev['cycle']))
+                ev_table.setItem(i, 1, QTableWidgetItem(f" {ev['sigma_max']:.3f} "))
+                ev_table.setItem(i, 2, QTableWidgetItem(f" {ev['sigma1']:.3f} "))
+                ev_table.setItem(i, 3, QTableWidgetItem(f" {ev['sigma2']:.3f} "))
+                ev_table.setItem(i, 4, QTableWidgetItem(f" {ev['s1']:.3f} "))
+                ev_table.setItem(i, 5, QTableWidgetItem(f" {ev['s2']:.3f} "))
+                ev_table.setItem(i, 6, QTableWidgetItem(f" {ev['Ev']:.2f} "))
+            
+            # Merge Ev2/Ev1 ratio into the last column
+            ev1 = next((ev['Ev'] for ev in ev_results if ev['cycle'] == "First Loading"), None)
+            ev2 = next((ev['Ev'] for ev in ev_results if ev['cycle'] == "Second Loading"), None)
+            
+            if ev1 and ev2:
+                ev2_ev1_value = f"{ev2 / ev1:.2f}"
+                merged_item = QTableWidgetItem(ev2_ev1_value)
+                merged_item.setTextAlignment(Qt.AlignCenter)
+                ev_table.setItem(0, 6, merged_item)
+                ev_table.setSpan(0, 6, len(ev_results), 1)
+            
+            # Resize
+            ev_table.resizeColumnsToContents()
+            ev_table.resizeRowsToContents()
+            ev_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            ev_table.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+            
+            # Center table
+            table_container = QHBoxLayout()
+            table_container.addStretch(1)
+            table_container.addWidget(ev_table)
+            table_container.addStretch(1)
+            
+            page_layout.addLayout(table_container)
 
             page_widget.setLayout(page_layout)
             app.graphs_stack.addWidget(page_widget)
@@ -351,7 +394,7 @@ def evaluate_test_curve_fit(app):
             ev_table.setObjectName("evResultsTable")
             ev_table.setColumnCount(7)
             ev_table.setHorizontalHeaderLabels([
-                " ", " σ₃ (MN/m²) ", " a₀ ", " a₁ ", " a₂ ", " Ev (MN/m²) ", " Ev₂ / Ev₁ "
+                " Cycle ", " σ₃ (MN/m²) ", " a₀ ", " a₁ ", " a₂ ", " Ev (MN/m²) ", " Ev₂ / Ev₁ "
             ])
             ev_table.verticalHeader().setVisible(False)
             ev_table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -363,7 +406,14 @@ def evaluate_test_curve_fit(app):
             # Populate rows
             ev_table.setRowCount(len(ev_results))
             for i, ev in enumerate(ev_results):
-                ev_table.setItem(i, 0, QTableWidgetItem(str(i + 1)))
+                if ev['cycle'] == "1":
+                    cycle_text = "First Loading"
+                elif ev['cycle'] == "2":
+                    cycle_text = "Second Loading"
+                else:
+                    cycle_text = ev['cycle'] 
+                     
+                ev_table.setItem(i, 0, QTableWidgetItem(cycle_text))
                 ev_table.setItem(i, 1, QTableWidgetItem(f" {ev['sigma_max']:.3f} "))
                 ev_table.setItem(i, 2, QTableWidgetItem(f" {ev['a0']:.4f} "))
                 ev_table.setItem(i, 3, QTableWidgetItem(f" {ev['a1']:.4f} "))
