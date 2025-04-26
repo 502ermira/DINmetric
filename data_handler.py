@@ -65,9 +65,27 @@ def evaluate_test_secant(app):
 
         for (station, side), data_cycles in grouped_data.items():
             fig, ax = plt.subplots()
-            ax.set_title(f"{station} - {side} | Load-Settlement Curve (Secant Method)")
+            SMALL_SIZE = 7
+            MEDIUM_SIZE = 7
+            BIGGER_SIZE = 8
+            marker_size = 3
+            line_width = 0.85
+            
+            plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+            plt.rc('axes', titlesize=BIGGER_SIZE)     # fontsize of the axes title
+            plt.rc('axes', labelsize=MEDIUM_SIZE)     # fontsize of the x and y labels
+            plt.rc('xtick', labelsize=SMALL_SIZE)      # fontsize of the tick labels
+            plt.rc('ytick', labelsize=SMALL_SIZE)      # fontsize of the tick labels
+            plt.rc('legend', fontsize=SMALL_SIZE)      # legend fontsize
+            plt.rc('figure', titlesize=BIGGER_SIZE)    # fontsize of the figure title
+
+            ax.set_title(f"{station} - {side} | Load-Settlement Curve (Secant Method)", pad=13)
             ax.set_xlabel("Normal Stress σ (MN/m²)")
             ax.set_ylabel("Settlement s (mm)")
+            ax.xaxis.label.set_size(7)
+            ax.yaxis.label.set_size(7)
+            ax.tick_params(axis='both', which='major', labelsize=6)
+            ax.tick_params(axis='both', which='minor', labelsize=6)
             ax.grid(True)
 
             group_result_lines = [f"<b>Group: Station={station}, Side={side}</b>", f"<b>Plate Radius:</b> {r:.1f} mm (Diameter: {d:.0f} mm)"]
@@ -87,7 +105,7 @@ def evaluate_test_secant(app):
                 settlements = settlements[sort_idx]
 
                 ax.plot(stress, settlements, marker=cycle_markers[cycle], linestyle='None',
-                        label=cycle, color=colors[cycle])
+                        label=cycle, color=colors[cycle], markersize=marker_size, linewidth=line_width)
 
                 # Use actual data only, i.e., skip preload from fit if desired
                 fit_stress = stress[1:] if cycle == "First Loading" and len(stress) > 2 else stress
@@ -95,9 +113,9 @@ def evaluate_test_secant(app):
 
                 if cycle == "First Loading":
                     # Mark the actual first point (optional)
-                    ax.plot(stress[0], settlements[0], marker='o', color='gray', markersize=6)
+                    ax.plot(stress[0], settlements[0], marker='o', color='gray', markersize=marker_size, linewidth=line_width)
                     ax.annotate('Preload', xy=(stress[0], settlements[0]), xytext=(5, 5),
-                                textcoords='offset points', fontsize=8, color='gray')
+                                textcoords='offset points', fontsize=6.5, color='gray')
 
                 if len(fit_stress) >= 3:
                     coeffs = np.polyfit(fit_stress, fit_settlements, 2)
@@ -106,7 +124,7 @@ def evaluate_test_secant(app):
                     sigma_max = np.max(fit_stress)
                     sigma_range = np.linspace(0, 1.2 * sigma_max, 200)
                     settlement_fit = poly_curve(sigma_range)
-                    ax.plot(sigma_range, settlement_fit, linestyle='--', color=colors[cycle], label=f"{cycle} Fit")
+                    ax.plot(sigma_range, settlement_fit, linestyle='--', color=colors[cycle], label=f"{cycle} Fit", markersize=marker_size, linewidth=line_width)
 
                 if "Loading" in cycle:
                     sigma_max = np.max(stress)
@@ -135,15 +153,24 @@ def evaluate_test_secant(app):
                         's2': s2
                     })
 
-                    ax.plot([sigma1, sigma2], [s1, s2], 'k-', lw=1.5, label=f"{cycle} Secant")
+                    ax.plot([sigma1, sigma2], [s1, s2], 'k-', label=f"{cycle} Secant", markersize=marker_size, linewidth=line_width)
+                    
+                    # Vertical reference lines and labels at σ₁, σ₂, σ₃=σ_max
+                    for val, label in zip(
+                        [sigma1, sigma2, sigma_max],
+                        ["σ₁", "σ₂", "σ₃=σ_max"]
+                    ):
+                        ax.axvline(x=val, color='black', linestyle=':', linewidth=0.6)
+                        ax.text(val, 1.005, label, rotation=0, ha='center', va='bottom', transform=ax.get_xaxis_transform(), fontsize=7)
 
-                    for val, label in zip([sigma1, sigma2, sigma_max], ["σ₁", "σ₂", "σ₃=σ_max"]):
-                        ax.axvline(x=val, color='black', linestyle=':', linewidth=0.8)
-                        ax.text(val, ax.get_ylim()[0], label, rotation=0, ha='center', va='bottom')
-
+                    # Horizontal lines at s₁ and s₂
+                    ax.axhline(y=s1, color='black', linestyle=':', linewidth=0.6)
+                    ax.axhline(y=s2, color='black', linestyle=':', linewidth=0.6)
+                    
+                    x_pos = -0.015  # Negative value means a little outside of plot
+                        
                     for s_val, s_label in zip([s1, s2], [f"s₁ ({cycle[0]})", f"s₂ ({cycle[0]})"]):
-                        ax.axhline(y=s_val, color='gray', linestyle='--', linewidth=0.8)
-                        ax.text(ax.get_xlim()[0], s_val, s_label, ha='left', va='bottom', fontsize=8, color='gray')
+                        ax.text(x_pos, s_val, s_label, va='center', ha='right', transform=ax.get_yaxis_transform(), fontsize=7, clip_on=False)
 
             for ev in ev_results:
                 group_result_lines.append(
@@ -160,7 +187,7 @@ def evaluate_test_secant(app):
 
             group_result_lines.append("<hr>")
 
-            ax.legend(loc='upper right', fontsize='small')
+            ax.legend(fontsize=6, markerscale=0.7, handlelength=0.7)
             ax.invert_yaxis()
 
             canvas = FigureCanvas(fig)
@@ -280,9 +307,28 @@ def evaluate_test_curve_fit(app):
 
         for (station, side), data_cycles in grouped_data.items():
             fig, ax = plt.subplots()
-            ax.set_title(f"{station} - {side} | Load-Settlement Curve")
+            SMALL_SIZE = 7
+            MEDIUM_SIZE = 7
+            BIGGER_SIZE = 8
+            marker_size = 3
+            line_width_curve = 0.85
+            
+            plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+            plt.rc('axes', titlesize=BIGGER_SIZE)     # fontsize of the axes title
+            plt.rc('axes', labelsize=MEDIUM_SIZE)     # fontsize of the x and y labels
+            plt.rc('xtick', labelsize=SMALL_SIZE)      # fontsize of the tick labels
+            plt.rc('ytick', labelsize=SMALL_SIZE)      # fontsize of the tick labels
+            plt.rc('legend', fontsize=SMALL_SIZE)      # legend fontsize
+            plt.rc('figure', titlesize=BIGGER_SIZE)    # fontsize of the figure title
+
+            ax.set_title(f"{station} - {side} | Load-Settlement Curve", pad=13)
             ax.set_xlabel("Normal Stress σ (MN/m²)")
             ax.set_ylabel("Settlement s (mm)")
+            ax.xaxis.label.set_size(7)
+            ax.yaxis.label.set_size(7)
+            ax.tick_params(axis='both', which='major', labelsize=6)
+            ax.tick_params(axis='both', which='minor', labelsize=6)
+
             ax.grid(True)
 
             group_result_lines = [f"<b>Group: Station={station}, Side={side}</b>"]
@@ -303,11 +349,11 @@ def evaluate_test_curve_fit(app):
 
                 if cycle == "First Loading":
                     ax.plot(stress[1:], settlements[1:], marker=cycle_markers[cycle],
-                            linestyle='None', label=f"{cycle}", color=cycle_colors[cycle])
-                    ax.plot(stress[0], settlements[0], 'x', color='gray', label="Preload point")
+                            linestyle='None', label=f"{cycle}", color=cycle_colors[cycle], markersize=marker_size, linewidth=line_width_curve)
+                    ax.plot(stress[0], settlements[0], 'x', color='gray', label="Preload point", markersize=marker_size, linewidth=line_width_curve)
                 else:
                     ax.plot(stress, settlements, marker=cycle_markers[cycle],
-                            linestyle='None', label=f"{cycle}", color=cycle_colors[cycle])
+                            linestyle='None', label=f"{cycle}", color=cycle_colors[cycle], markersize=marker_size, linewidth=line_width_curve)
 
                 # Fit curve for all cycles (including Unloading)
                 if cycle == "First Loading" and len(stress) > 2:
@@ -322,7 +368,7 @@ def evaluate_test_curve_fit(app):
 
                 sigma_range = np.linspace(np.min(stress), np.max(stress), 200)
                 fit_curve = a0 + a1 * sigma_range + a2 * sigma_range ** 2
-                ax.plot(sigma_range, fit_curve, '-', color=cycle_colors[cycle], label=f"{cycle} Fit")
+                ax.plot(sigma_range, fit_curve, '-', color=cycle_colors[cycle], label=f"{cycle} Fit", linewidth=line_width_curve)
 
                 # Ev calculation only for Loading cycles
                 if "Loading" in cycle:
@@ -349,23 +395,24 @@ def evaluate_test_curve_fit(app):
                         s2 = a0 + a1 * sigma2 + a2 * sigma2 ** 2
                     
                         # Plot secant line between (σ₁, s₁) and (σ₂, s₂)
-                        ax.plot([sigma1, sigma2], [s1, s2], 'k-', lw=1.5)
+                        ax.plot([sigma1, sigma2], [s1, s2], 'k-', linewidth=line_width_curve)
                     
                         # Vertical reference lines and labels at σ₁, σ₂, σ₃=σ_max
                         for val, label in zip(
                             [sigma1, sigma2, sigma_max],
                             [f"σ₁ ({SIGMA_RATIO_1:.1f}σ₃)", f"σ₂ ({SIGMA_RATIO_2:.1f}σ₃)", "σ₃=σ_max"]
                         ):
-                            ax.axvline(x=val, color='black', linestyle=':', linewidth=0.8)
-                            ax.text(val, ax.get_ylim()[0], label, rotation=0, ha='center', va='bottom')
-                    
+                            ax.axvline(x=val, color='black', linestyle=':', linewidth=0.6)
+                            ax.text(val, 1.005, label, rotation=0, ha='center', va='bottom', transform=ax.get_xaxis_transform())
+
                         # Horizontal lines at s₁ and s₂
-                        ax.axhline(y=s1, color='black', linestyle=':', linewidth=0.8)
-                        ax.axhline(y=s2, color='black', linestyle=':', linewidth=0.8)
+                        ax.axhline(y=s1, color='black', linestyle=':', linewidth=0.6)
+                        ax.axhline(y=s2, color='black', linestyle=':', linewidth=0.6)
                         # Label s1 and s2 on the y-axis
-                        x_offset = ax.get_xlim()[0] - 0.003 * (ax.get_xlim()[1] - ax.get_xlim()[0])
-                        ax.text(x_offset, s1, "s₁", va='center', ha='right')
-                        ax.text(x_offset, s2, "s₂", va='center', ha='right')
+                        x_pos = -0.015
+                        
+                        ax.text(x_pos, s1, "s₁", va='center', ha='right', transform=ax.get_yaxis_transform(), fontsize=7, clip_on=False)
+                        ax.text(x_pos, s2, "s₂", va='center', ha='right', transform=ax.get_yaxis_transform(), fontsize=7, clip_on=False)
                         
             for ev in ev_results:
                 group_result_lines.append(
@@ -382,7 +429,7 @@ def evaluate_test_curve_fit(app):
             group_result_lines.append("<hr>")
             result_lines.extend(group_result_lines)
 
-            ax.legend()
+            ax.legend(fontsize=6, markerscale=0.7, handlelength=0.7)
             ax.invert_yaxis()
 
             canvas = FigureCanvas(fig)
