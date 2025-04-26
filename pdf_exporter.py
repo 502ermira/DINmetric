@@ -1,71 +1,131 @@
-import os
-import tempfile
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
-from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtGui import QTextDocument
+from matplotlib.backends.backend_pdf import PdfPages
+from PyQt5.QtWidgets import QFileDialog
+import matplotlib.pyplot as plt
+import numpy as np
+from datetime import datetime
 
 def export_to_pdf(app):
-    try:
-        filename = f"PlateLoadTest_{app.test_id.text() or 'Untitled'}.pdf"
-        filepath = os.path.join(tempfile.gettempdir(), filename)
+    if app.graphs_stack.count() == 0:
+        return 
 
-        c = canvas.Canvas(filepath, pagesize=A4)
-        width, height = A4
+    # Ask user where to save
+    file_path, _ = QFileDialog.getSaveFileName(app, "Save PDF", "", "PDF Files (*.pdf)")
+    if not file_path:
+        return
 
-        # Title
-        c.setFont("Helvetica-Bold", 16)
-        c.drawCentredString(width / 2, height - 30, "LOAD TEST PLATE - DIN 18134")
+    if not file_path.endswith('.pdf'):
+        file_path += '.pdf'
 
-        y = height - 50
-        spacing = 14
+    with PdfPages(file_path) as pdf:
+        ## --- PAGE 1: Metadata (Sidebar Info) ---
+        fig, ax = plt.subplots(figsize=(8.27, 11.69))
+        ax.axis('off')
 
-        # Insert Logos if available
-        logo_max_width = 100
-        logo_max_height = 50
-
-        if app.company_logo_path:
-            c.drawImage(app.company_logo_path, 40, y - logo_max_height, width=logo_max_width, height=logo_max_height, preserveAspectRatio=True, mask='auto')
-
-        if app.accreditation_logo_path:
-            c.drawImage(app.accreditation_logo_path, width - logo_max_width - 40, y - logo_max_height, width=logo_max_width, height=logo_max_height, preserveAspectRatio=True, mask='auto')
-
-        y -= (logo_max_height + 20)
-        # Metadata
-        c.setFont("Helvetica", 10)
-        meta_fields = [
-            ("Test ID:", app.test_id.text()),
-            ("Plate Diameter:", app.plate_diameter.currentText() + " mm"),
-            ("Lever Ratio:", app.lever_ratio.text()),
+        text_lines = []
+        fields = [
+            ("Test ID", app.test_id.text()),
+            ("Company Name", app.company_name.text()),
+            ("Slogan", app.company_slogan.text()),
+            ("Code", app.code.text()),
+            ("Version", app.version.text()),
+            ("Date", app.date.text()),
+            ("Other Info", app.other_info.text()),
+            ("Client Name", app.client_name.text()),
+            ("Project Name", app.project_name.text()),
+            ("Contractor's Name", app.contractor_name.text()),
+            ("Request Number", app.request_number.text()),
+            ("Weather / Temperature", app.weather_temp.text()),
+            ("Designed & Confirmed By", app.designed_by.text()),
+            ("Measurements Done By", app.measured_by.text()),
+            ("Supervisor", app.supervisor.text()),
+            ("Laboratory", app.laboratory.text()),
+            ("Type of Measurement", app.measurement_type.text())
         ]
-        for label, val in meta_fields:
-            c.drawString(40, y, f"{label} {val}")
-            y -= spacing
 
-        # Plot
-        temp_plot_path = os.path.join(tempfile.gettempdir(), "plot.png")
-        app.figure.savefig(temp_plot_path, bbox_inches="tight")
+        for label, value in fields:
+            text_lines.append(f"{label}: {value}")
 
-        c.drawImage(temp_plot_path, 40, y - 280, width=520, height=250)
-        y -= 300
+        full_text = "\n".join(text_lines)
 
-        # Results
-        from PyQt5.QtGui import QTextDocument
-        doc = QTextDocument()
-        doc.setHtml(app.result_label.text())
-        result_text = doc.toPlainText()
+        # Center the text
+        ax.text(0.5, 0.5, full_text, transform=ax.transAxes,
+                fontsize=10, ha='center', va='center', wrap=True)
 
-        for line in result_text.split("\n"):
-            if y < 100:
-                c.showPage()
-                y = height - 40
-            c.drawString(40, y, line.strip())
-            y -= spacing
+        # Footer: Page Number
+        fig.text(0.5, 0.04, f"Page 1", ha='center', fontsize=8)
 
-        c.save()
+        pdf.savefig(fig)
+        plt.close(fig)
 
-        QMessageBox.information(app, "Export Complete", f"PDF exported to:\n{filepath}")
-        os.startfile(filepath)
-    except Exception as e:
-        QMessageBox.critical(app, "Export Error", str(e))
-    
+        ## --- Next Pages: Graph + Table ---
+        for i in range(app.graphs_stack.count()):
+            page_widget = app.graphs_stack.widget(i)
+            layout = page_widget.layout()
+
+            # Get the Canvas (figure)
+            canvas = layout.itemAt(0).widget()
+            fig = canvas.figure
+            
+            # Create a new blank figure
+            new_fig = plt.figure(figsize=(8.27, 11.69))  # A4 size
+            gs = new_fig.add_gridspec(2, 1, height_ratios=[2, 1])
+            
+            # First subplot: Graph
+            ax_graph = new_fig.add_subplot(gs[0])
+            ax_graph.axis('off')
+            
+            # Save original figure to buffer
+            import io
+            buf = io.BytesIO()
+            fig.savefig(buf, format='png', dpi=300)
+            buf.seek(0)
+            
+            # Load it back with imread
+            img = plt.imread(buf)
+            ax_graph.imshow(img)
+            ax_graph.set_aspect('auto')
+            
+            # --- Below: Table ---
+            table_ax = new_fig.add_subplot(gs[1])
+            table_ax.axis('off')
+
+            # --- Add Table Below ---
+            ev_table = layout.itemAt(1).layout().itemAt(1).widget()
+
+            table_data = []
+            headers = []
+            for col in range(ev_table.columnCount()):
+                header_item = ev_table.horizontalHeaderItem(col)
+                if header_item:
+                    headers.append(header_item.text().strip())
+
+            for row in range(ev_table.rowCount()):
+                row_data = []
+                for col in range(ev_table.columnCount()):
+                    item = ev_table.item(row, col)
+                    if item:
+                        row_data.append(item.text().strip())
+                    else:
+                        row_data.append("")
+                table_data.append(row_data)
+
+            # Create a mini-table using matplotlib
+            table_ax = new_fig.add_axes([0.1, 0.05, 0.8, 0.3])
+            table_ax.axis('off')
+
+            table = table_ax.table(
+                cellText=table_data,
+                colLabels=headers,
+                loc='center',
+                cellLoc='center',
+                colLoc='center'
+            )
+            table.auto_set_font_size(False)
+            table.set_fontsize(8)
+            table.scale(1, 1.2)
+
+            # Insert page number
+            new_fig.text(0.5, 0.02, f"Page {i+2}", ha='center', fontsize=8)
+
+            pdf.savefig(new_fig)
+            plt.close(new_fig)
