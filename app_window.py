@@ -67,21 +67,12 @@ class PlateLoadTestApp(QWidget):
         self.company_logo_preview.setFixedSize(70, 35)
         
         # Company Logo Remove Button
-        self.company_logo_remove_btn = QPushButton("×", self.company_logo_container)
+        self.company_logo_remove_btn = QPushButton(self.company_logo_container)
+        self.company_logo_remove_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarCloseButton))
         self.company_logo_remove_btn.setFixedSize(16, 16)
         self.company_logo_remove_btn.move(70 - 16, 0)
-        self.company_logo_remove_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #e57373;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #ef5350;
-            }
-        """)
+        self.company_logo_remove_btn.setObjectName("removeLogoButton")
+
         self.company_logo_remove_btn.setCursor(Qt.PointingHandCursor)
         self.company_logo_remove_btn.hide()
         self.company_logo_remove_btn.clicked.connect(self.remove_company_logo)
@@ -111,22 +102,12 @@ class PlateLoadTestApp(QWidget):
         self.accreditation_logo_preview.setAlignment(Qt.AlignCenter)
         self.accreditation_logo_preview.setFixedSize(70, 35)
         
-        # Accreditation Logo Remove Button
-        self.accreditation_logo_remove_btn = QPushButton("×", self.accreditation_logo_container)
+        # Accreditation Logo Remove 
+        self.accreditation_logo_remove_btn = QPushButton(self.accreditation_logo_container)
+        self.accreditation_logo_remove_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarCloseButton))
         self.accreditation_logo_remove_btn.setFixedSize(16, 16)
         self.accreditation_logo_remove_btn.move(70 - 16, 0)
-        self.accreditation_logo_remove_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #e57373;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #ef5350;
-            }
-        """)
+        self.accreditation_logo_remove_btn.setObjectName("removeLogoButton")
         self.accreditation_logo_remove_btn.setCursor(Qt.PointingHandCursor)
         self.accreditation_logo_remove_btn.hide()
         self.accreditation_logo_remove_btn.clicked.connect(self.remove_accreditation_logo)

@@ -135,5 +135,16 @@ QTableWidget#evResultsTable::item {
     font-size: 16px;
 }
 
+QPushButton#removeLogoButton {
+     background-color: #FF5C5C;
+    border: none;
+    border-radius: 8px;
+    padding: 0;
+}
+
+QPushButton#removeLogoButton:hover {
+    background-color: #e53935;
+}
+
 
 """
