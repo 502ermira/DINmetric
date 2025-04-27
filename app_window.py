@@ -155,7 +155,7 @@ class PlateLoadTestApp(QWidget):
             ("Measurements Done By", QLineEdit()),
             ("Supervisor", QLineEdit()),
             ("Laboratory", QLineEdit()),
-            ("Type of Measurement", QLineEdit())
+            ("Type of Material", QLineEdit())
         ]
 
         for label, field in sidebar_info:
@@ -165,7 +165,7 @@ class PlateLoadTestApp(QWidget):
          self.date, self.other_info, self.client_name, self.project_name,
          self.contractor_name, self.request_number, self.weather_temp,
          self.designed_by, self.measured_by, self.supervisor, self.laboratory,
-         self.measurement_type) = [field for _, field in sidebar_info]
+         self.material_type) = [field for _, field in sidebar_info]
 
         # --- Always Visible Fields ---
         self.test_id = QLineEdit()
