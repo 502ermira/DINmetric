@@ -171,20 +171,35 @@ class PlateLoadTestApp(QWidget):
         self.test_id = QLineEdit()
         self.plate_diameter = QComboBox()
         self.plate_diameter.addItems(["300", "600", "762"])
+        
+        self.measurement_device_selector = QComboBox()
+        self.measurement_device_selector.addItems([
+            "Direct Measurement Device",
+            "Lever-Arm System"
+        ])
+        self.measurement_device_selector.currentIndexChanged.connect(self.toggle_lever_ratio_field)
+        
+        self.lever_ratio_label = QLabel("Lever Ratio (hp/hm)")
         self.lever_ratio = QLineEdit("1.000")
+        
         self.method_selector = QComboBox()
         self.method_selector.addItems([
             "DIN 18134 official method (2nd-degree curve fit)",
             "Practical Secant Approximation (not DIN 18134)"
         ])
-
+        
+        self.lever_ratio_label.setVisible(False)
+        self.lever_ratio.setVisible(False)
+        
         form_layout.setFormAlignment(Qt.AlignLeft)
         form_layout.setLabelAlignment(Qt.AlignRight)
         form_layout.setHorizontalSpacing(23)
-
+        
         form_layout.addRow("Plate Diameter (mm)", self.plate_diameter)
-        form_layout.addRow("Lever Ratio (hp/hm)", self.lever_ratio)
+        form_layout.addRow("Measurement Device", self.measurement_device_selector)
+        form_layout.addRow(self.lever_ratio_label, self.lever_ratio)
         form_layout.addRow("Calculation Method", self.method_selector)
+
 
         scale_factor = self.devicePixelRatioF()
         label_width = int(60 * scale_factor)
@@ -416,3 +431,12 @@ class PlateLoadTestApp(QWidget):
         self.accreditation_logo_container.hide()
         self.accreditation_logo_remove_btn.hide()
         self.accreditation_logo_btn.setText("Add Accreditation Logo")
+
+    def toggle_lever_ratio_field(self):
+        if self.measurement_device_selector.currentText() == "Lever-Arm System":
+            self.lever_ratio_label.setVisible(True)
+            self.lever_ratio.setVisible(True)
+        else:
+            self.lever_ratio_label.setVisible(False)
+            self.lever_ratio.setVisible(False)
+            self.lever_ratio.setText("1.000")
