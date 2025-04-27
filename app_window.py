@@ -139,7 +139,7 @@ class PlateLoadTestApp(QWidget):
 
         # --- Sidebar Content ---
         sidebar_info = [
-            ("Test Id", QLineEdit()),
+            ("Test ID", QLineEdit()),
             ("Company Name", QLineEdit()),
             ("Slogan", QLineEdit()),
             ("Code", QLineEdit()),

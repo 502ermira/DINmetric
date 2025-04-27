@@ -64,6 +64,7 @@ def evaluate_test_secant(app):
         }
 
         for (station, side), data_cycles in grouped_data.items():
+            group_raw_points = []
             fig, ax = plt.subplots()
             SMALL_SIZE = 7
             MEDIUM_SIZE = 7
@@ -93,6 +94,10 @@ def evaluate_test_secant(app):
             first_cycle_sigma_max = None
 
             for cycle in CYCLE_TYPES:
+
+                for l, s in zip(data_cycles[cycle]['loads'], data_cycles[cycle]['settlements']):
+                    group_raw_points.append((l, s, cycle))
+
                 loads = np.array(data_cycles[cycle]['loads'])
                 settlements = np.array(data_cycles[cycle]['settlements'])
 
@@ -194,6 +199,7 @@ def evaluate_test_secant(app):
 
             canvas = FigureCanvas(fig)
             page_widget = QWidget()
+            page_widget.group_raw_points = group_raw_points
             page_layout = QVBoxLayout()
             page_layout.addWidget(canvas)
 
@@ -308,6 +314,7 @@ def evaluate_test_curve_fit(app):
         cycle_colors = {"First Loading": "#1f77b4", "Unloading": "#7f7f7f", "Second Loading": "#2ca02c"}
 
         for (station, side), data_cycles in grouped_data.items():
+            group_raw_points = []
             fig, ax = plt.subplots()
             SMALL_SIZE = 7
             MEDIUM_SIZE = 7
@@ -338,6 +345,10 @@ def evaluate_test_curve_fit(app):
             first_cycle_sigma_max = None
 
             for cycle in CYCLE_TYPES:
+  
+                for l, s in zip(data_cycles[cycle]['loads'], data_cycles[cycle]['settlements']):
+                    group_raw_points.append((l, s, cycle))
+                
                 loads = np.array(data_cycles[cycle]['loads'])
                 settlements = np.array(data_cycles[cycle]['settlements'])
 
@@ -438,6 +449,7 @@ def evaluate_test_curve_fit(app):
 
             canvas = FigureCanvas(fig)
             page_widget = QWidget()
+            page_widget.group_raw_points = group_raw_points
             page_layout = QVBoxLayout()
             page_layout.addWidget(canvas)
             # Create styled table for Ev results
