@@ -39,7 +39,7 @@ def export_to_pdf(app):
         draw_metadata_section(fig, app)
 
         # Test Report Title and ID
-        fig.text(0.15, 0.7, f"Test id: {app.test_id.text()}", ha='center', fontsize=10)
+        fig.text(0.15, 0.685, f"Test iD: {app.test_id.text()}", ha='center', fontsize=9)
         fig.text(0.5, 0.69, "Test report", ha='center', fontsize=14.5, fontweight='bold')
         fig.text(0.5, 0.66, "Static plate stain modulus", ha='center', fontsize=12.5)
 
@@ -65,6 +65,12 @@ def export_to_pdf(app):
         table1.set_fontsize(9)
         table1.scale(1, 1.5)
 
+        # Set column widths (28% for labels, 72% for values)
+        n_rows = len(table1_data)
+        for row in range(n_rows):
+            table1[(row, 0)].set_width(0.28)
+            table1[(row, 1)].set_width(0.72)
+
         # Align column 0 left, column 1 center
         for row in range(len(table1_data)):
             table1[ (row,0) ].get_text().set_ha('left')
@@ -88,7 +94,12 @@ def export_to_pdf(app):
         )
         table2.auto_set_font_size(False)
         table2.set_fontsize(9)
-        table2.scale(1, 1.5)
+        table2.scale(1, 1.6)
+
+        n_rows = len(table2_data)
+        for row in range(n_rows):
+            table2[(row, 0)].set_width(0.28)
+            table2[(row, 1)].set_width(0.72)
 
         for row in range(len(table2_data)):
             table2[ (row,0) ].get_text().set_ha('left')

@@ -168,7 +168,6 @@ class PlateLoadTestApp(QWidget):
          self.material_type) = [field for _, field in sidebar_info]
 
         # --- Always Visible Fields ---
-        self.test_id = QLineEdit()
         self.plate_diameter = QComboBox()
         self.plate_diameter.addItems(["300", "600", "762"])
         
