@@ -38,10 +38,12 @@ def export_to_pdf(app):
         # Metadata section
         draw_metadata_section(fig, app)
 
+        plate_diameter = app.plate_diameter.currentText()
+
         # Test Report Title and ID
-        fig.text(0.15, 0.685, f"Test iD: {app.test_id.text()}", ha='center', fontsize=9)
+        fig.text(0.15, 0.685, f"Test ID: {app.test_id.text()}", ha='center', fontsize=9)
         fig.text(0.5, 0.69, "Test report", ha='center', fontsize=14.5, fontweight='bold')
-        fig.text(0.5, 0.66, "Static plate stain modulus", ha='center', fontsize=12.5)
+        fig.text(0.5, 0.66, f"Static Plate Strain Modulus (D = {plate_diameter} mm)", ha='center', fontsize=12.5)
 
         # Table 1: 6 rows, 2 columns
         table1_data = [
@@ -84,7 +86,7 @@ def export_to_pdf(app):
             ["Laboratory:", app.laboratory.text()],
         ]
 
-        table2_ax = fig.add_axes([0.09, 0.27, 0.80, 0.08])
+        table2_ax = fig.add_axes([0.09, 0.30, 0.80, 0.08])
         table2_ax.axis('off')
         table2 = table2_ax.table(
             cellText=table2_data,
@@ -107,14 +109,70 @@ def export_to_pdf(app):
             table2[ (row,1) ].get_text().set_ha('center')
 
         # Note
-        fig.text(0.08, 0.11, "*Note: The results apply to the measured points.", ha='left', fontsize=8, style='italic')
+        fig.text(0.08, 0.12, "*Note: The results apply to the measured points.", ha='left', fontsize=8, style='italic')
 
         # Date and Designed By
-        fig.text(0.08, 0.06, f"Date:\n{app.date.text()}", ha='left', fontsize=9)
-        fig.text(0.7, 0.1, "Designed and confirmed by:", ha='left', fontsize=9)
-        fig.text(0.7, 0.08, "_____________________________", ha='left', fontsize=9)
-        fig.text(0.7, 0.06, app.designed_by.text(), ha='left', fontsize=9)
+        fig.text(0.08, 0.07, f"Date:\n{app.date.text()}", ha='left', fontsize=9)
+        fig.text(0.7, 0.15, "Designed and confirmed by:", ha='left', fontsize=9)
+        fig.text(0.7, 0.09, "_____________________________", ha='left', fontsize=9)
+        fig.text(0.7, 0.07, app.designed_by.text(), ha='left', fontsize=9)
 
+        pdf.savefig(fig)
+        plt.close(fig)
+
+        # --- PAGE 2: Summary Table Page ---
+        fig, ax = plt.subplots(figsize=A4_SIZE)
+        ax.axis('off')
+
+        # Draw logos
+        if app.company_logo_path:
+            company_logo_img = plt.imread(app.company_logo_path)
+            ax_logo_left = fig.add_axes([0.08, 0.88, 0.15, 0.08])
+            ax_logo_left.axis('off')
+            ax_logo_left.imshow(company_logo_img)
+
+        if app.accreditation_logo_path:
+            accreditation_logo_img = plt.imread(app.accreditation_logo_path)
+            ax_logo_right = fig.add_axes([0.77, 0.88, 0.15, 0.08])
+            ax_logo_right.axis('off')
+            ax_logo_right.imshow(accreditation_logo_img)
+        draw_metadata_section(fig, app)
+        
+        # Title
+        fig.text(0.8, 0.8, "Summary of EV Results", ha='center', fontsize=14, fontweight='600')
+        
+        # Prepare Table Data
+        summary_headers = ["Number", "Station", "Side", "Type of Material", "Ev₁ (MN/m²)", "Ev₂ (MN/m²)", "Ev₂/Ev₁"]
+        summary_data = []
+        
+        for idx, result in enumerate(app.summary_results, start=1):
+            summary_data.append([
+                str(idx),
+                result['station'],
+                result['side'],
+                result['material'],
+                f"{result['ev1']:.2f}",
+                f"{result['ev2']:.2f}",
+                f"{result['ev2_ev1_ratio']:.2f}" if result['ev2_ev1_ratio'] else "-"
+            ])
+        
+        # Draw Table
+        table_ax = fig.add_axes([0.05, 0.15, 0.9, 0.7])
+        table_ax.axis('off')
+        
+        table = table_ax.table(
+            cellText=summary_data,
+            colLabels=summary_headers,
+            cellLoc='center',
+            loc='center'
+        )
+        table.auto_set_font_size(False)
+        table.set_fontsize(8)
+        table.scale(1, 1.4)
+        
+        # Footer
+        fig.text(0.5, 0.05, "Page 2", ha='center', fontsize=8)
+        
         pdf.savefig(fig)
         plt.close(fig)
 
@@ -191,7 +249,7 @@ def export_to_pdf(app):
             table.scale(1, 1.2)
 
             # Footer
-            new_fig.text(0.5, 0.02, f"Page {i+2}", ha='center', fontsize=8)
+            new_fig.text(0.5, 0.02, f"Page {i+3}", ha='center', fontsize=8)
 
             pdf.savefig(new_fig)
             plt.close(new_fig)

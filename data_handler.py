@@ -16,6 +16,7 @@ def evaluate_test_secant(app):
 
         CYCLE_TYPES = ["First Loading", "Unloading", "Second Loading"]
         grouped_data = defaultdict(lambda: {cycle: {'loads': [], 'settlements': []} for cycle in CYCLE_TYPES})
+        app.summary_results = []
 
         for row in range(app.table.rowCount()):
             try:
@@ -192,6 +193,16 @@ def evaluate_test_secant(app):
 
             group_result_lines.append("<hr>")
 
+            if ev1 and ev2:
+                app.summary_results.append({
+                    'station': station,
+                    'side': side,
+                    'material': app.material_type.text(),
+                    'ev1': ev1,
+                    'ev2': ev2,
+                    'ev2_ev1_ratio': ev2 / ev1
+                })
+
             ax.legend(fontsize=6, markerscale=0.7, handlelength=0.7)
             ax.invert_yaxis()
 
@@ -274,6 +285,7 @@ def evaluate_test_curve_fit(app):
         SIGMA_RATIO_2 = 0.7
 
         grouped_data = defaultdict(lambda: {cycle: {'loads': [], 'settlements': []} for cycle in CYCLE_TYPES})
+        app.summary_results = []
 
         for row in range(app.table.rowCount()):
             try:
@@ -438,6 +450,17 @@ def evaluate_test_curve_fit(app):
             ev2 = next((ev['Ev'] for ev in ev_results if ev['cycle'] == "Second Loading"), None)
             if ev1 and ev2:
                 group_result_lines.append(f"<b>&nbsp;&nbsp;Ev Ratio (Ev2 / Ev1):</b> {ev2 / ev1:.2f}")
+
+            if ev1 and ev2:
+                app.summary_results.append({
+                    'station': station,
+                    'side': side,
+                    'material': app.material_type.text(),
+                    'ev1': ev1,
+                    'ev2': ev2,
+                    'ev2_ev1_ratio': ev2 / ev1
+                })
+
                 
             group_result_lines.append("<hr>")
             result_lines.extend(group_result_lines)
