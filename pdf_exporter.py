@@ -25,13 +25,13 @@ def export_to_pdf(app):
         # Draw logos
         if app.company_logo_path:
             company_logo_img = plt.imread(app.company_logo_path)
-            ax_logo_left = fig.add_axes([0.08, 0.85, 0.15, 0.08])
+            ax_logo_left = fig.add_axes([0.08, 0.87, 0.15, 0.08])
             ax_logo_left.axis('off')
             ax_logo_left.imshow(company_logo_img)
 
         if app.accreditation_logo_path:
             accreditation_logo_img = plt.imread(app.accreditation_logo_path)
-            ax_logo_right = fig.add_axes([0.77, 0.85, 0.15, 0.08])
+            ax_logo_right = fig.add_axes([0.77, 0.87, 0.15, 0.08])
             ax_logo_right.axis('off')
             ax_logo_right.imshow(accreditation_logo_img)
 
@@ -41,7 +41,7 @@ def export_to_pdf(app):
         plate_diameter = app.plate_diameter.currentText()
 
         # Test Report Title and ID
-        fig.text(0.15, 0.685, f"Test ID: {app.test_id.text()}", ha='center', fontsize=9)
+        fig.text(0.15, 0.69, f"Test ID: {app.test_id.text()}", ha='center', fontsize=9)
         fig.text(0.5, 0.69, "Test report", ha='center', fontsize=14.5, fontweight='bold')
         fig.text(0.5, 0.66, f"Static Plate Strain Modulus (D = {plate_diameter} mm)", ha='center', fontsize=12.5)
 
@@ -108,14 +108,12 @@ def export_to_pdf(app):
             table2[ (row,0) ].get_text().set_fontweight('normal')
             table2[ (row,1) ].get_text().set_ha('center')
 
-        # Note
-        fig.text(0.08, 0.12, "*Note: The results apply to the measured points.", ha='left', fontsize=8, style='italic')
-
         # Date and Designed By
-        fig.text(0.08, 0.07, f"Date:\n{app.date.text()}", ha='left', fontsize=9)
-        fig.text(0.7, 0.15, "Designed and confirmed by:", ha='left', fontsize=9)
-        fig.text(0.7, 0.09, "_____________________________", ha='left', fontsize=9)
-        fig.text(0.7, 0.07, app.designed_by.text(), ha='left', fontsize=9)
+        fig.text(0.08, 0.09, "Date:", ha='left', fontsize=9)
+        fig.text(0.08, 0.07, f"{app.date.text()}", ha='left', fontsize=9)
+        fig.text(0.68, 0.117, "Designed and confirmed by:", ha='left', fontsize=9)
+        fig.text(0.68, 0.09, "_____________________________", ha='left', fontsize=9)
+        fig.text(0.68, 0.07, app.designed_by.text(), ha='left', fontsize=9)
 
         pdf.savefig(fig)
         plt.close(fig)
@@ -127,19 +125,20 @@ def export_to_pdf(app):
         # Draw logos
         if app.company_logo_path:
             company_logo_img = plt.imread(app.company_logo_path)
-            ax_logo_left = fig.add_axes([0.08, 0.88, 0.15, 0.08])
+            ax_logo_left = fig.add_axes([0.08, 0.87, 0.15, 0.08])
             ax_logo_left.axis('off')
             ax_logo_left.imshow(company_logo_img)
 
         if app.accreditation_logo_path:
             accreditation_logo_img = plt.imread(app.accreditation_logo_path)
-            ax_logo_right = fig.add_axes([0.77, 0.88, 0.15, 0.08])
+            ax_logo_right = fig.add_axes([0.77, 0.87, 0.15, 0.08])
             ax_logo_right.axis('off')
             ax_logo_right.imshow(accreditation_logo_img)
         draw_metadata_section(fig, app)
         
         # Title
-        fig.text(0.8, 0.8, "Summary of EV Results", ha='center', fontsize=14, fontweight='600')
+        fig.text(0.5, 0.7, "Summary of EV Results", ha='center', fontsize=14, fontweight='600')
+        fig.text(0.15, 0.7, f"Test ID: {app.test_id.text()}", ha='center', fontsize=9)
         
         # Prepare Table Data
         summary_headers = ["Number", "Station", "Side", "Type of Material", "Ev₁ (MN/m²)", "Ev₂ (MN/m²)", "Ev₂/Ev₁"]
@@ -169,7 +168,15 @@ def export_to_pdf(app):
         table.auto_set_font_size(False)
         table.set_fontsize(8)
         table.scale(1, 1.4)
-        
+
+        # Note
+        fig.text(0.08, 0.09, "*Note: The results apply to the measured points.", ha='left', fontsize=8, style='italic')
+
+        # Date and Designed By
+        fig.text(0.7, 0.127, "Measurments done by:", ha='left', fontsize=9)
+        fig.text(0.7, 0.11, "_____________________________", ha='left', fontsize=9)
+        fig.text(0.7, 0.09, app.measured_by.text(), ha='left', fontsize=9)
+
         # Footer
         fig.text(0.5, 0.05, "Page 2", ha='center', fontsize=8)
         
@@ -186,6 +193,17 @@ def export_to_pdf(app):
             fig = canvas.figure
 
             new_fig = plt.figure(figsize=A4_SIZE)
+            test_number = i + 1
+            new_fig.text(0.5, 0.86, f"Test Point {test_number}", ha='center', fontsize=10)
+
+            if app.company_logo_path:
+              company_logo_img = plt.imread(app.company_logo_path)
+              ax_logo_left = new_fig.add_axes([0.08, 0.87, 0.15, 0.08])
+              ax_logo_left.axis('off')
+              ax_logo_left.imshow(company_logo_img)
+
+            new_fig.text(0.5, 0.87, f"Static Plate Strain Modulus (D = {plate_diameter} mm)", ha='center', fontsize=12)
+
             gs = new_fig.add_gridspec(2, 1, height_ratios=[2, 1])
 
             # Graph
@@ -221,7 +239,7 @@ def export_to_pdf(app):
             raw_data = [[f"{load:.2f}", f"{settlement:.2f}", cycle] for load, settlement, cycle in group_raw_points]
 
             # Plot Raw Data Table
-            raw_table_ax = new_fig.add_axes([0.1, 0.7, 0.8, 0.2])
+            raw_table_ax = new_fig.add_axes([0.1, 0.5, 0.8, 0.2])
             raw_table_ax.axis('off')
             raw_table = raw_table_ax.table(
                 cellText=raw_data,
@@ -267,9 +285,9 @@ def draw_metadata_section(fig, app):
     row_h = 0.02
     spacing = 0
 
-    y = 0.8
+    y = 0.83
 
-    def draw_cell(x, y, w, h, text, fontsize=8, weight='normal', ha='left', centered=False):
+    def draw_cell(x, y, w, h, text, fontsize=8.5, weight='normal', ha='left', centered=False):
         ax_meta.add_patch(patches.Rectangle((x, y), w, h, fill=False, edgecolor='black', linewidth=0.7))
         text_x = x + w/2 if centered else x + 0.005
         text_ha = 'center' if centered else ha
