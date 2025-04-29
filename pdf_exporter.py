@@ -235,9 +235,29 @@ def export_to_pdf(app):
                 table_data.append(row_data)
 
             # Extract Load-Settlement Data
-            raw_headers = ["Load (kN)", "Settlement (mm)", "Cycle Type"]
-            raw_data = [[f"{load:.2f}", f"{settlement:.2f}", cycle] for load, settlement, cycle in group_raw_points]
-
+            raw_headers = ["Load (kN)", "Settlement (mm)"]
+            
+            # Group raw points by cycle type
+            grouped_data = {
+                "First Loading": [],
+                "Unloading": [],
+                "Second Loading": []
+            }
+            
+            for load, settlement, cycle in group_raw_points:
+                if cycle in grouped_data:
+                    grouped_data[cycle].append([f"{load:.2f}", f"{settlement:.2f}"])
+            
+            # Combine data with empty separator rows
+            raw_data = []
+            for key in ["First Loading", "Unloading", "Second Loading"]:
+                raw_data.extend(grouped_data[key])
+                raw_data.extend([["", ""] for _ in range(3)])
+            
+            # Remove trailing empty rows
+            while raw_data and raw_data[-1] == ["", ""]:
+                raw_data.pop()
+            
             # Plot Raw Data Table
             raw_table_ax = new_fig.add_axes([0.1, 0.5, 0.8, 0.2])
             raw_table_ax.axis('off')
