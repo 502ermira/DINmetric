@@ -188,42 +188,28 @@ def export_to_pdf(app):
             page_widget = app.graphs_stack.widget(i)
             layout = page_widget.layout()
             group_raw_points = getattr(page_widget, 'group_raw_points', [])
-
+        
             canvas = layout.itemAt(0).widget()
             fig = canvas.figure
-
+        
             new_fig = plt.figure(figsize=A4_SIZE)
             test_number = i + 1
-            new_fig.text(0.5, 0.86, f"Test Point {test_number}", ha='center', fontsize=10)
-
+            new_fig.text(0.5, 0.845, f"Test Point {test_number}", ha='center', fontsize=10)
+        
             if app.company_logo_path:
-              company_logo_img = plt.imread(app.company_logo_path)
-              ax_logo_left = new_fig.add_axes([0.08, 0.87, 0.15, 0.08])
-              ax_logo_left.axis('off')
-              ax_logo_left.imshow(company_logo_img)
-
+                company_logo_img = plt.imread(app.company_logo_path)
+                ax_logo_left = new_fig.add_axes([0.08, 0.87, 0.15, 0.08])
+                ax_logo_left.axis('off')
+                ax_logo_left.imshow(company_logo_img)
+        
             new_fig.text(0.5, 0.87, f"Static Plate Strain Modulus (D = {plate_diameter} mm)", ha='center', fontsize=12)
-
-            gs = new_fig.add_gridspec(2, 1, height_ratios=[2, 1])
-
-            # Graph
-            ax_graph = new_fig.add_subplot(gs[0])
-            ax_graph.axis('off')
-
-            buf = io.BytesIO()
-            fig.savefig(buf, format='png', dpi=300)
-            buf.seek(0)
-            img = plt.imread(buf)
-            ax_graph.imshow(img)
-            ax_graph.set_aspect('auto')
-
+        
             # Tables
             ev_table = layout.itemAt(1).layout().itemAt(1).widget()
-
-            # Safety: check objectName
+        
             if not ev_table or ev_table.objectName() != "evResultsTable":
-                continue 
-
+                continue
+        
             # Extract EV Table data
             headers = [ev_table.horizontalHeaderItem(col).text().strip() for col in range(ev_table.columnCount())]
             table_data = []
@@ -233,33 +219,36 @@ def export_to_pdf(app):
                     item = ev_table.item(row, col)
                     row_data.append(item.text().strip() if item else "")
                 table_data.append(row_data)
-
+        
             # Extract Load-Settlement Data
             raw_headers = ["Load (kN)", "Settlement (mm)"]
-            
-            # Group raw points by cycle type
             grouped_data = {
                 "First Loading": [],
                 "Unloading": [],
                 "Second Loading": []
             }
-            
             for load, settlement, cycle in group_raw_points:
                 if cycle in grouped_data:
                     grouped_data[cycle].append([f"{load:.2f}", f"{settlement:.2f}"])
-            
-            # Combine data with empty separator rows
+        
             raw_data = []
             for key in ["First Loading", "Unloading", "Second Loading"]:
                 raw_data.extend(grouped_data[key])
                 raw_data.extend([["", ""] for _ in range(3)])
-            
-            # Remove trailing empty rows
+        
             while raw_data and raw_data[-1] == ["", ""]:
                 raw_data.pop()
-            
-            # Plot Raw Data Table
-            raw_table_ax = new_fig.add_axes([0.1, 0.5, 0.8, 0.2])
+        
+            # Layout parameters
+            margin_left = 0.08
+            margin_right = 0.08
+            spacing = 0.01
+            table_width = 0.24
+            graph_left = margin_left + table_width + spacing
+            graph_width = 1.0 - graph_left - margin_right
+        
+            # Load-Settlement Table (left)
+            raw_table_ax = new_fig.add_axes([margin_left, 0.4, table_width, 0.4])
             raw_table_ax.axis('off')
             raw_table = raw_table_ax.table(
                 cellText=raw_data,
@@ -270,10 +259,27 @@ def export_to_pdf(app):
             )
             raw_table.auto_set_font_size(False)
             raw_table.set_fontsize(8)
-            raw_table.scale(1, 1.2)
-
-            # Plot EV Table
-            ev_table_ax = new_fig.add_axes([0.1, 0.05, 0.8, 0.3])
+            raw_table.scale(1, 1.1)
+        
+            # Save original figure as high-quality PNG
+            buf = io.BytesIO()
+            fig.savefig(buf, format='png', dpi=300, bbox_inches='tight')
+            buf.seek(0)
+            img = plt.imread(buf)
+        
+            # Calculate image aspect ratio and size
+            img_height, img_width = img.shape[:2]
+            aspect_ratio = img_height / img_width
+            graph_height = graph_width * aspect_ratio
+            graph_bottom = 0.4 
+        
+            # Graph (right)
+            ax_graph = new_fig.add_axes([graph_left, graph_bottom, graph_width, graph_height])
+            ax_graph.axis('off')
+            ax_graph.imshow(img)
+        
+            # EV Table (bottom full width)
+            ev_table_ax = new_fig.add_axes([margin_left, 0.05, 1.0 - margin_left - margin_right, 0.25])
             ev_table_ax.axis('off')
             table = ev_table_ax.table(
                 cellText=table_data,
@@ -285,10 +291,11 @@ def export_to_pdf(app):
             table.auto_set_font_size(False)
             table.set_fontsize(8)
             table.scale(1, 1.2)
-
+        
             # Footer
             new_fig.text(0.5, 0.02, f"Page {i+3}", ha='center', fontsize=8)
-
+        
+            # Save page
             pdf.savefig(new_fig)
             plt.close(new_fig)
 
