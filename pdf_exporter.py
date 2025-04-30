@@ -39,6 +39,7 @@ def export_to_pdf(app):
         draw_metadata_section(fig, app)
 
         plate_diameter = app.plate_diameter.currentText()
+        measurement_device = app.measurement_device_selector.currentText()
 
         # Test Report Title and ID
         fig.text(0.15, 0.69, f"Test ID: {app.test_id.text()}", ha='center', fontsize=9)
@@ -53,7 +54,10 @@ def export_to_pdf(app):
             ["Type of material:", app.material_type.text()],
             ["Request number:", app.request_number.text()],
             ["Weather/ Temperature:", app.weather_temp.text()],
+            ["Measurement Device:", measurement_device]
         ]
+        if measurement_device == "Lever-Arm System":
+            table1_data.append(["Lever Ratio (hp/hm):", app.lever_ratio.text()])
 
         table1_ax = fig.add_axes([0.09, 0.44, 0.80, 0.12])
         table1_ax.axis('off')
@@ -67,11 +71,11 @@ def export_to_pdf(app):
         table1.set_fontsize(9)
         table1.scale(1, 1.5)
 
-        # Set column widths (28% for labels, 72% for values)
+        # Set column widths (27% for labels, 73% for values)
         n_rows = len(table1_data)
         for row in range(n_rows):
-            table1[(row, 0)].set_width(0.28)
-            table1[(row, 1)].set_width(0.72)
+            table1[(row, 0)].set_width(0.27)
+            table1[(row, 1)].set_width(0.73)
 
         # Align column 0 left, column 1 center
         for row in range(len(table1_data)):
@@ -141,7 +145,7 @@ def export_to_pdf(app):
         fig.text(0.15, 0.7, f"Test ID: {app.test_id.text()}", ha='center', fontsize=9)
         
         # Prepare Table Data
-        summary_headers = ["Number", "Station", "Side", "Type of Material", "Ev₁ (MN/m²)", "Ev₂ (MN/m²)", "Ev₂/Ev₁"]
+        summary_headers = ["Test Point", "Station", "Side", "Type of Material", "Ev₁ (MN/m²)", "Ev₂ (MN/m²)", "Ev₂/Ev₁"]
         summary_data = []
         
         for idx, result in enumerate(app.summary_results, start=1):
@@ -170,12 +174,12 @@ def export_to_pdf(app):
         table.scale(1, 1.4)
 
         # Note
-        fig.text(0.08, 0.09, "*Note: The results apply to the measured points.", ha='left', fontsize=8, style='italic')
+        fig.text(0.08, 0.08, "*Note: The results apply to the measured points.", ha='left', fontsize=8, style='italic')
 
         # Date and Designed By
-        fig.text(0.7, 0.127, "Measurments done by:", ha='left', fontsize=9)
-        fig.text(0.7, 0.11, "_____________________________", ha='left', fontsize=9)
-        fig.text(0.7, 0.09, app.measured_by.text(), ha='left', fontsize=9)
+        fig.text(0.7, 0.119, "Measurments done by:", ha='left', fontsize=8.5)
+        fig.text(0.7, 0.10, "_____________________________", ha='left', fontsize=8.5)
+        fig.text(0.7, 0.08, app.measured_by.text(), ha='left', fontsize=8.5)
 
         # Footer
         fig.text(0.5, 0.043, "Page 2", ha='center', fontsize=8)
@@ -256,7 +260,7 @@ def export_to_pdf(app):
                 table_data.append(row_data)
         
             # Extract Load-Settlement Data
-            raw_headers = ["Load (kN)", "Stress (MN/m²)", "Settlement (mm)",]
+            raw_headers = ["Load\n(kN)", "Stress\n(MN/m²)", "Settlement\n(mm)"]
             grouped_data = {
                 "First Loading": [],
                 "Unloading": [],
@@ -307,9 +311,14 @@ def export_to_pdf(app):
                 cellLoc='center',
                 colLoc='center'
             )
+            
             raw_table.auto_set_font_size(False)
             raw_table.set_fontsize(8)
-            raw_table.scale(1, 1.1)
+            raw_table.scale(1, 1.1)  # Keep regular rows a bit larger
+            
+            # 👉 Only increase header height (row=0) manually
+            for col in range(len(raw_headers)):
+                raw_table[(0, col)].set_height(0.08)  # Adjust just this row's height
         
             # Graph (right): Copy axes content from original figure
             orig_ax = fig.axes[0] if fig.axes else None
