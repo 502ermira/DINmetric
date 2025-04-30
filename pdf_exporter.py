@@ -198,7 +198,6 @@ def export_to_pdf(app):
             side = app.summary_results[test_number - 1]['side']
             new_fig.text(0.5, 0.845, f"Test Point {test_number} | Station: {station} | Side: {side}", ha='center', fontsize=10)
 
-
             # Metadata table
             metadata_table_data = [
                 ["Client:", app.client_name.text()],
@@ -257,7 +256,7 @@ def export_to_pdf(app):
                 table_data.append(row_data)
         
             # Extract Load-Settlement Data
-            raw_headers = ["Load (kN)", "Settlement (mm)"]
+            raw_headers = ["Load (kN)", "Stress (MN/m²)", "Settlement (mm)",]
             grouped_data = {
                 "First Loading": [],
                 "Unloading": [],
@@ -268,11 +267,24 @@ def export_to_pdf(app):
                     grouped_data[cycle].append([f"{load:.2f}", f"{settlement:.2f}"])
         
             raw_data = []
+            area = np.pi * (float(plate_diameter) / 1000) ** 2 / 4
             for key in ["First Loading", "Unloading", "Second Loading"]:
-                raw_data.extend(grouped_data[key])
-                raw_data.extend([["", ""] for _ in range(2)])
-        
-            while raw_data and raw_data[-1] == ["", ""]:
+                for load_str, settl_str in grouped_data[key]:
+                    try:
+                        load = float(load_str)
+                        settlement = float(settl_str)
+                        stress = load / area / 1000  # Convert to MN/m²
+                        raw_data.append([
+                            f"{load:.2f}",
+                            f"{stress:.3f}",
+                            f"{settlement:.2f}"
+                        ])
+                    except ValueError:
+                        raw_data.append([load_str, settl_str, ""])
+                raw_data.extend([["", "", ""] for _ in range(2)])
+            
+            # Remove trailing empty rows
+            while raw_data and raw_data[-1] == ["", "", ""]:
                 raw_data.pop()
         
             # Layout parameters
@@ -285,7 +297,7 @@ def export_to_pdf(app):
             graph_bottom = 0.27
             graph_height = 0.4
         
-            # Load-Settlement Table (left)
+            # Load-Settlement-Stress Table (left)
             raw_table_ax = new_fig.add_axes([margin_left, 0.27, table_width, 0.4])
             raw_table_ax.axis('off')
             raw_table = raw_table_ax.table(
@@ -384,7 +396,6 @@ def export_to_pdf(app):
             # Save page
             pdf.savefig(new_fig)
             plt.close(new_fig)
-
 
 def draw_metadata_section(fig, app):
     ax_meta = fig.add_axes([0, 0, 1, 1])
