@@ -83,7 +83,7 @@ def export_to_pdf(app):
         table2_data = [
             ["Measurements Done By:", app.measured_by.text()],
             ["Supervisor:", app.supervisor.text()],
-            ["Laboratory:", app.laboratory.text()],
+            ["Laboratory Technician:", app.laboratory.text()],
         ]
 
         table2_ax = fig.add_axes([0.09, 0.30, 0.80, 0.08])
@@ -178,7 +178,7 @@ def export_to_pdf(app):
         fig.text(0.7, 0.09, app.measured_by.text(), ha='left', fontsize=9)
 
         # Footer
-        fig.text(0.5, 0.05, "Page 2", ha='center', fontsize=8)
+        fig.text(0.5, 0.043, "Page 2", ha='center', fontsize=8)
         
         pdf.savefig(fig)
         plt.close(fig)
@@ -194,7 +194,43 @@ def export_to_pdf(app):
         
             new_fig = plt.figure(figsize=A4_SIZE)
             test_number = i + 1
-            new_fig.text(0.5, 0.845, f"Test Point {test_number}", ha='center', fontsize=10)
+            station = app.summary_results[test_number - 1]['station']
+            side = app.summary_results[test_number - 1]['side']
+            new_fig.text(0.5, 0.845, f"Test Point {test_number} | Station: {station} | Side: {side}", ha='center', fontsize=10)
+
+
+            # Metadata table
+            metadata_table_data = [
+                ["Client:", app.client_name.text()],
+                ["Project:", app.project_name.text()],
+                ["The Contractor:", app.contractor_name.text()],
+                ["Type of Material:", app.material_type.text()],
+                ["Date:", app.date.text()],
+                ["Weather/Temperature:", app.weather_temp.text()],
+            ]
+            
+            meta_table_ax = new_fig.add_axes([0.08, 0.735, 0.84, 0.07])
+            meta_table_ax.axis('off')
+            meta_table = meta_table_ax.table(
+                cellText=metadata_table_data,
+                colLabels=None,
+                cellLoc='center',
+                loc='center'
+            )
+            meta_table.auto_set_font_size(False)
+            meta_table.set_fontsize(8)
+            meta_table.scale(1, 1.3)
+            
+            # Set left column to 27% and right column to 73%
+            n_rows = len(metadata_table_data)
+            for row in range(n_rows):
+                meta_table[(row, 0)].set_width(0.27)
+                meta_table[(row, 1)].set_width(0.73)
+            
+            # Align text: left for labels, center for values
+            for row in range(n_rows):
+                meta_table[(row, 0)].get_text().set_ha('left')
+                meta_table[(row, 1)].get_text().set_ha('center')
         
             if app.company_logo_path:
                 company_logo_img = plt.imread(app.company_logo_path)
@@ -234,7 +270,7 @@ def export_to_pdf(app):
             raw_data = []
             for key in ["First Loading", "Unloading", "Second Loading"]:
                 raw_data.extend(grouped_data[key])
-                raw_data.extend([["", ""] for _ in range(3)])
+                raw_data.extend([["", ""] for _ in range(2)])
         
             while raw_data and raw_data[-1] == ["", ""]:
                 raw_data.pop()
@@ -242,15 +278,15 @@ def export_to_pdf(app):
             # Layout parameters
             margin_left = 0.08
             margin_right = 0.08
-            spacing = 0.01
+            spacing = 0.06
             table_width = 0.24
             graph_left = margin_left + table_width + spacing
             graph_width = 1.0 - graph_left - margin_right
-            graph_bottom = 0.4
+            graph_bottom = 0.27
             graph_height = 0.4
         
             # Load-Settlement Table (left)
-            raw_table_ax = new_fig.add_axes([margin_left, 0.4, table_width, 0.4])
+            raw_table_ax = new_fig.add_axes([margin_left, 0.27, table_width, 0.4])
             raw_table_ax.axis('off')
             raw_table = raw_table_ax.table(
                 cellText=raw_data,
@@ -325,7 +361,7 @@ def export_to_pdf(app):
                     )
             
             # EV Table (bottom full width)
-            ev_table_ax = new_fig.add_axes([margin_left, 0.05, 1.0 - margin_left - margin_right, 0.25])
+            ev_table_ax = new_fig.add_axes([margin_left, 0.04, 1.0 - margin_left - margin_right, 0.25])
             ev_table_ax.axis('off')
             table = ev_table_ax.table(
                 cellText=table_data,
@@ -338,8 +374,12 @@ def export_to_pdf(app):
             table.set_fontsize(8)
             table.scale(1, 1.2)
         
+            new_fig.text(0.08, 0.095, f"Supervisor: {app.supervisor.text()}", ha='left', fontsize=8)
+            new_fig.text(0.08, 0.08, f"The Contractor: {app.contractor_name.text()}", ha='left', fontsize=8)
+            new_fig.text(0.08, 0.065, f"Laboratory Technician: {app.laboratory.text()}", ha='left', fontsize=8)
+
             # Footer
-            new_fig.text(0.5, 0.02, f"Page {i+3}", ha='center', fontsize=8)
+            new_fig.text(0.5, 0.043, f"Page {i+3}", ha='center', fontsize=8)
         
             # Save page
             pdf.savefig(new_fig)

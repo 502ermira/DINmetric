@@ -154,7 +154,7 @@ class PlateLoadTestApp(QWidget):
             ("Designed & Confirmed By", QLineEdit()),
             ("Measurements Done By", QLineEdit()),
             ("Supervisor", QLineEdit()),
-            ("Laboratory", QLineEdit()),
+            ("Laboratory Technician", QLineEdit()),
             ("Type of Material", QLineEdit())
         ]
 
