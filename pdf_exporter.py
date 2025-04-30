@@ -44,7 +44,7 @@ def export_to_pdf(app):
         # Test Report Title and ID
         fig.text(0.15, 0.69, f"Test ID: {app.test_id.text()}", ha='center', fontsize=9)
         fig.text(0.5, 0.69, "Test report", ha='center', fontsize=14.5, fontweight='bold')
-        fig.text(0.5, 0.66, f"Static Plate Strain Modulus (D = {plate_diameter} mm)", ha='center', fontsize=12.5)
+        fig.text(0.5, 0.66, f"Static Plate Strain Modulus (D = {plate_diameter} mm) ~ DIN 18134:2012-04", ha='center', fontsize=12.5)
 
         # Table 1: 6 rows, 2 columns
         table1_data = [
@@ -113,11 +113,13 @@ def export_to_pdf(app):
             table2[ (row,1) ].get_text().set_ha('center')
 
         # Date and Designed By
-        fig.text(0.08, 0.09, "Date:", ha='left', fontsize=9)
-        fig.text(0.08, 0.07, f"{app.date.text()}", ha='left', fontsize=9)
-        fig.text(0.68, 0.117, "Designed and confirmed by:", ha='left', fontsize=9)
-        fig.text(0.68, 0.09, "_____________________________", ha='left', fontsize=9)
-        fig.text(0.68, 0.07, app.designed_by.text(), ha='left', fontsize=9)
+        fig.text(0.08, 0.1, "Date:", ha='left', fontsize=8.5)
+        fig.text(0.08, 0.08, f"{app.date.text()}", ha='left', fontsize=8.5)
+        fig.text(0.68, 0.1255, "Designed and confirmed by:", ha='left', fontsize=8.5)
+        fig.text(0.68, 0.101, "_____________________________", ha='left', fontsize=8.5)
+        fig.text(0.68, 0.08, app.designed_by.text(), ha='left', fontsize=8.5)
+
+        fig.text(0.08, 0.059, "Test report generated in compliance with DIN 18134:2012-04 | Software: DINmetric", ha='left', fontsize=6.8, alpha=0.45)
 
         pdf.savefig(fig)
         plt.close(fig)
@@ -143,6 +145,7 @@ def export_to_pdf(app):
         # Title
         fig.text(0.5, 0.7, "Summary of EV Results", ha='center', fontsize=14, fontweight='600')
         fig.text(0.15, 0.7, f"Test ID: {app.test_id.text()}", ha='center', fontsize=9)
+        fig.text(0.5, 0.57, f"Static Plate Strain Modulus (D = {plate_diameter} mm) ~ DIN 18134:2012-04", ha='center', fontsize=12)
         
         # Prepare Table Data
         summary_headers = ["Test Point", "Station", "Side", "Type of Material", "Ev₁ (MN/m²)", "Ev₂ (MN/m²)", "Ev₂/Ev₁"]
@@ -177,13 +180,14 @@ def export_to_pdf(app):
         fig.text(0.08, 0.08, "*Note: The results apply to the measured points.", ha='left', fontsize=8, style='italic')
 
         # Date and Designed By
-        fig.text(0.7, 0.119, "Measurments done by:", ha='left', fontsize=8.5)
-        fig.text(0.7, 0.10, "_____________________________", ha='left', fontsize=8.5)
-        fig.text(0.7, 0.08, app.measured_by.text(), ha='left', fontsize=8.5)
+        fig.text(0.7, 0.13, "Measurments done by:", ha='left', fontsize=8.5)
+        fig.text(0.7, 0.105, "_____________________________", ha='left', fontsize=8.5)
+        fig.text(0.7, 0.085, app.measured_by.text(), ha='left', fontsize=8.5)
 
         # Footer
+        fig.text(0.08, 0.059, "Test report generated in compliance with DIN 18134:2012-04 | Software: DINmetric", ha='left', fontsize=6.8, alpha=0.45)
         fig.text(0.5, 0.043, "Page 2", ha='center', fontsize=8)
-        
+
         pdf.savefig(fig)
         plt.close(fig)
 
@@ -241,7 +245,7 @@ def export_to_pdf(app):
                 ax_logo_left.axis('off')
                 ax_logo_left.imshow(company_logo_img)
         
-            new_fig.text(0.5, 0.87, f"Static Plate Strain Modulus (D = {plate_diameter} mm)", ha='center', fontsize=12)
+            new_fig.text(0.5, 0.87, f"Static Plate Strain Modulus (D = {plate_diameter} mm) ~ DIN 18134:2012-04", ha='center', fontsize=12)
         
             # Tables
             ev_table = layout.itemAt(1).layout().itemAt(1).widget()
@@ -314,11 +318,11 @@ def export_to_pdf(app):
             
             raw_table.auto_set_font_size(False)
             raw_table.set_fontsize(8)
-            raw_table.scale(1, 1.1)  # Keep regular rows a bit larger
+            raw_table.scale(1, 1.1)
             
-            # 👉 Only increase header height (row=0) manually
+            # Only increase header height (row=0) manually
             for col in range(len(raw_headers)):
-                raw_table[(0, col)].set_height(0.08)  # Adjust just this row's height
+                raw_table[(0, col)].set_height(0.08)
         
             # Graph (right): Copy axes content from original figure
             orig_ax = fig.axes[0] if fig.axes else None
@@ -382,7 +386,7 @@ def export_to_pdf(app):
                     )
             
             # EV Table (bottom full width)
-            ev_table_ax = new_fig.add_axes([margin_left, 0.04, 1.0 - margin_left - margin_right, 0.25])
+            ev_table_ax = new_fig.add_axes([margin_left, 0.05, 1.0 - margin_left - margin_right, 0.25])
             ev_table_ax.axis('off')
             table = ev_table_ax.table(
                 cellText=table_data,
@@ -395,11 +399,12 @@ def export_to_pdf(app):
             table.set_fontsize(8)
             table.scale(1, 1.2)
         
-            new_fig.text(0.08, 0.095, f"Supervisor: {app.supervisor.text()}", ha='left', fontsize=8)
-            new_fig.text(0.08, 0.08, f"The Contractor: {app.contractor_name.text()}", ha='left', fontsize=8)
-            new_fig.text(0.08, 0.065, f"Laboratory Technician: {app.laboratory.text()}", ha='left', fontsize=8)
+            new_fig.text(0.08, 0.115, f"Supervisor: {app.supervisor.text()}", ha='left', fontsize=8)
+            new_fig.text(0.08, 0.1, f"The Contractor: {app.contractor_name.text()}", ha='left', fontsize=8)
+            new_fig.text(0.08, 0.085, f"Laboratory Technician: {app.laboratory.text()}", ha='left', fontsize=8)
 
             # Footer
+            new_fig.text(0.08, 0.059, "Test report generated in compliance with DIN 18134:2012-04 | Software: DINmetric", ha='left', fontsize=6.8, alpha=0.45)
             new_fig.text(0.5, 0.043, f"Page {i+3}", ha='center', fontsize=8)
         
             # Save page
