@@ -246,6 +246,8 @@ def export_to_pdf(app):
             table_width = 0.24
             graph_left = margin_left + table_width + spacing
             graph_width = 1.0 - graph_left - margin_right
+            graph_bottom = 0.4
+            graph_height = 0.4
         
             # Load-Settlement Table (left)
             raw_table_ax = new_fig.add_axes([margin_left, 0.4, table_width, 0.4])
@@ -261,23 +263,67 @@ def export_to_pdf(app):
             raw_table.set_fontsize(8)
             raw_table.scale(1, 1.1)
         
-            # Save original figure as high-quality PNG
-            buf = io.BytesIO()
-            fig.savefig(buf, format='png', dpi=300, bbox_inches='tight')
-            buf.seek(0)
-            img = plt.imread(buf)
-        
-            # Calculate image aspect ratio and size
-            img_height, img_width = img.shape[:2]
-            aspect_ratio = img_height / img_width
-            graph_height = graph_width * aspect_ratio
-            graph_bottom = 0.4 
-        
-            # Graph (right)
-            ax_graph = new_fig.add_axes([graph_left, graph_bottom, graph_width, graph_height])
-            ax_graph.axis('off')
-            ax_graph.imshow(img)
-        
+            # Graph (right): Copy axes content from original figure
+            orig_ax = fig.axes[0] if fig.axes else None
+            if orig_ax:
+                new_ax = new_fig.add_axes([graph_left, graph_bottom, graph_width, graph_height])
+            
+                # Copy lines
+                for line in orig_ax.get_lines():
+                    xdata = line.get_xdata()
+                    ydata = line.get_ydata()
+            
+                    is_vertical = all(x == xdata[0] for x in xdata)
+            
+                    if is_vertical:
+                        new_ax.axvline(
+                            x=xdata[0],
+                            color=line.get_color(),
+                            linestyle=line.get_linestyle(),
+                            linewidth=1
+                        )
+                    else:
+                        new_ax.plot(
+                            xdata,
+                            ydata,
+                            label=line.get_label(),
+                            color=line.get_color(),
+                            linestyle=line.get_linestyle(),
+                            marker=line.get_marker(),
+                            linewidth=1,
+                            markersize=4
+                        )
+            
+                # Copy axis labels, limits, title
+                new_ax.set_title(orig_ax.get_title())
+                new_ax.set_xlabel(orig_ax.get_xlabel())
+                new_ax.set_ylabel(orig_ax.get_ylabel())
+                new_ax.set_xlim(orig_ax.get_xlim())
+                new_ax.set_ylim(orig_ax.get_ylim())
+            
+                # Copy legend
+                if orig_ax.get_legend():
+                    new_ax.legend()
+            
+                # Copy grid
+                x_grid_on = any(line.get_visible() for line in orig_ax.get_xgridlines())
+                y_grid_on = any(line.get_visible() for line in orig_ax.get_ygridlines())
+                new_ax.grid(x_grid_on or y_grid_on)
+            
+                # Copy every text annotation exactly
+                for text in orig_ax.texts:
+                    new_ax.text(
+                        *text.get_position(),
+                        text.get_text(),
+                        fontsize=text.get_fontsize(),
+                        fontstyle=text.get_fontstyle(),
+                        fontweight=text.get_fontweight(),
+                        color=text.get_color(),
+                        ha=text.get_ha(),
+                        va=text.get_va(),
+                        rotation=text.get_rotation()
+                    )
+            
             # EV Table (bottom full width)
             ev_table_ax = new_fig.add_axes([margin_left, 0.05, 1.0 - margin_left - margin_right, 0.25])
             ev_table_ax.axis('off')
