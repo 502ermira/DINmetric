@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
-from PyQt5.QtWidgets import QVBoxLayout, QWidget, QMessageBox, QLabel, QTableWidget, QTableWidgetItem, QSizePolicy, QHBoxLayout, QAbstractScrollArea
+from PyQt5.QtWidgets import QVBoxLayout, QWidget, QMessageBox, QLabel, QTableWidget, QTableWidgetItem, QSizePolicy, QHBoxLayout, QAbstractScrollArea, QAbstractItemView
 from PyQt5.QtCore import Qt
 from constants import CYCLE_TYPES
 from collections import defaultdict
@@ -212,7 +212,10 @@ def evaluate_test_secant(app):
             page_widget = QWidget()
             page_widget.group_raw_points = group_raw_points
             page_layout = QVBoxLayout()
-            page_layout.addWidget(canvas)
+            page_layout.setContentsMargins(0, 0, 0, 0)
+            page_layout.setSpacing(5)
+            canvas.setMinimumHeight(300)
+            page_layout.addWidget(canvas, stretch=1)
 
             ev_table = QTableWidget()
             ev_table.setObjectName("evResultsTable")
@@ -221,10 +224,16 @@ def evaluate_test_secant(app):
                 " Cycle ", " σ₃ (MN/m²) ", " σ₁ (MN/m²) ", " σ₂ (MN/m²) ", " s₁ (mm) ", " s₂ (mm) ", " Ev (MN/m²) "
             ])
             ev_table.verticalHeader().setVisible(False)
+            ev_table.verticalHeader().setDefaultSectionSize(0)
             ev_table.setEditTriggers(QTableWidget.NoEditTriggers)
             ev_table.setSelectionMode(QTableWidget.NoSelection)
             ev_table.setFocusPolicy(Qt.NoFocus)
-            ev_table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+            ev_table.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+            ev_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            ev_table.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+            ev_table.horizontalHeader().setStretchLastSection(False)
+            ev_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff) 
+            ev_table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
             
             # Fill the table
             ev_table.setRowCount(len(ev_results))
@@ -256,13 +265,17 @@ def evaluate_test_secant(app):
             
             # Center table
             table_container = QHBoxLayout()
-            table_container.addStretch(1)
+            table_container.setSpacing(0)
+            table_container.setContentsMargins(0, 0, 0, 0)
+            table_container.addStretch(1) 
             table_container.addWidget(ev_table)
             table_container.addStretch(1)
+            table_container.setAlignment(Qt.AlignCenter) 
             
-            page_layout.addLayout(table_container)
+            page_layout.addLayout(table_container, stretch=0)
 
             page_widget.setLayout(page_layout)
+            page_widget.setContentsMargins(0, 0, 0, 0)
             app.graphs_stack.addWidget(page_widget)
 
         if app.graphs_stack.count() > 0:
@@ -483,6 +496,7 @@ def evaluate_test_curve_fit(app):
                 " Cycle ", " σ₃ (MN/m²) ", " a₀ ", " a₁ ", " a₂ ", " Ev (MN/m²) ", " Ev₂ / Ev₁ "
             ])
             ev_table.verticalHeader().setVisible(False)
+            ev_table.verticalHeader().setDefaultSectionSize(0)
             ev_table.setEditTriggers(QTableWidget.NoEditTriggers)
             ev_table.setSelectionMode(QTableWidget.NoSelection)
             ev_table.setFocusPolicy(Qt.NoFocus)
@@ -522,8 +536,12 @@ def evaluate_test_curve_fit(app):
 
             total_width = sum([ev_table.columnWidth(i) for i in range(ev_table.columnCount())])
             ev_table.setMinimumWidth(total_width + ev_table.verticalHeader().width() + 2)
-            # Prevent vertical scrolling
+
             ev_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            ev_table.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+            ev_table.horizontalHeader().setStretchLastSection(False)
+            ev_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff) 
+            ev_table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
             
             # Resize rows to content
             ev_table.resizeRowsToContents()

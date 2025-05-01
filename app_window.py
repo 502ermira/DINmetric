@@ -253,6 +253,7 @@ class PlateLoadTestApp(QWidget):
         self.graph_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.graph_scroll.setWidgetResizable(True)
         self.graph_scroll.setWidget(self.graph_container)
+        self.graph_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         nav_layout = QHBoxLayout()
         self.prev_btn = QPushButton()
