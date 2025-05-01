@@ -146,6 +146,16 @@ def export_to_pdf(app):
         fig.text(0.5, 0.722, "Summary of EV Results", ha='center', fontsize=14, fontweight='600')
         fig.text(0.15, 0.722, f"Test ID: {app.test_id.text()}", ha='center', fontsize=9)
         fig.text(0.5, 0.688, f"Static Plate Strain Modulus (D = {plate_diameter} mm) ~ DIN 18134:2012-04", ha='center', fontsize=12)
+
+        if not app.summary_results:
+            print("Summary results are empty")
+            return
+        
+        for result in app.summary_results:
+            required_keys = ['station', 'side', 'material', 'ev1', 'ev2', 'ev2_ev1_ratio']
+            if not all(k in result for k in required_keys):
+                print(f"Incomplete summary result: {result}")
+                return
         
         # Prepare Table Data
         summary_headers = ["Test Point", "Station", "Side", "Type of Material", "Ev₁ (MN/m²)", "Ev₂ (MN/m²)", "Ev₂/Ev₁"]
@@ -167,12 +177,12 @@ def export_to_pdf(app):
         NUM_ROWS = len(summary_data)
         TOTAL_HEIGHT = HEADER_HEIGHT + NUM_ROWS * ROW_HEIGHT
         
-        TABLE_TOP_Y = 0.64
-        TABLE_BOTTOM_Y = TABLE_TOP_Y - TOTAL_HEIGHT
-        
+        TABLE_TOP_Y = 0.66
+        TABLE_HEIGHT = HEADER_HEIGHT + NUM_ROWS * ROW_HEIGHT
+
         TABLE_WIDTH = 0.86
         
-        table_ax = fig.add_axes([0.07, TABLE_BOTTOM_Y, TABLE_WIDTH, TOTAL_HEIGHT])
+        table_ax = fig.add_axes([0.07, TABLE_TOP_Y - TABLE_HEIGHT, TABLE_WIDTH, TABLE_HEIGHT])
         table_ax.axis('off')
         
         # Draw the table
@@ -212,12 +222,26 @@ def export_to_pdf(app):
             page_widget = app.graphs_stack.widget(i)
             layout = page_widget.layout()
             group_raw_points = getattr(page_widget, 'group_raw_points', [])
-        
+
+
+            if not group_raw_points or not isinstance(group_raw_points, list):
+                print(f"No raw points found for Station={station}, Side={side}")
+                continue
+            
+            # Inspect for malformed entries
+            for entry in group_raw_points:
+                if not (isinstance(entry, tuple) and len(entry) == 3):
+                    print(f"Malformed raw data at Station={station}, Side={side}: {entry}")
+                    continue
+
             canvas = layout.itemAt(0).widget()
             fig = canvas.figure
         
             new_fig = plt.figure(figsize=A4_SIZE)
             test_number = i + 1
+            if i >= len(app.summary_results):
+                continue
+
             station = app.summary_results[test_number - 1]['station']
             side = app.summary_results[test_number - 1]['side']
             new_fig.text(0.5, 0.845, f"Test Point {test_number} | Station: {station} | Side: {side}", ha='center', fontsize=10)
@@ -265,10 +289,15 @@ def export_to_pdf(app):
         
             # Tables
             ev_table = layout.itemAt(1).layout().itemAt(1).widget()
-        
+
             if not ev_table or ev_table.objectName() != "evResultsTable":
+                print(f"Missing or invalid ev_table for Station={station}, Side={side}")
                 continue
-        
+            
+            if ev_table.rowCount() == 0 or ev_table.columnCount() == 0:
+                print(f"ev_table is empty for Station={station}, Side={side}")
+                continue
+
             # Extract EV Table data
             headers = [ev_table.horizontalHeaderItem(col).text().strip() for col in range(ev_table.columnCount())]
             table_data = []
@@ -278,6 +307,11 @@ def export_to_pdf(app):
                     item = ev_table.item(row, col)
                     row_data.append(item.text().strip() if item else "")
                 table_data.append(row_data)
+
+            if not table_data or not any(any(cell for cell in row) for row in table_data):
+                print(f"No valid data in EV table for Station={station}, Side={side}")
+                continue
+
         
             # Extract Load-Settlement Data
             raw_headers = ["Load\n(kN)", "Stress\n(MN/m²)", "Settlement\n(mm)"]
@@ -342,6 +376,9 @@ def export_to_pdf(app):
         
             # Graph (right): Copy axes content from original figure
             orig_ax = fig.axes[0] if fig.axes else None
+            if not orig_ax or not orig_ax.get_lines():
+                print(f"No graph data to copy for Station={station}, Side={side}")
+                continue
             if orig_ax:
                 new_ax = new_fig.add_axes([graph_left, graph_bottom, graph_width, graph_height])
             
@@ -402,6 +439,8 @@ def export_to_pdf(app):
                     )
             
             # EV Table (bottom full width)
+            if not table_data:
+                continue 
             ev_table_ax = new_fig.add_axes([margin_left, 0.05, 1.0 - margin_left - margin_right, 0.25])
             ev_table_ax.axis('off')
             table = ev_table_ax.table(

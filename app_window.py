@@ -199,7 +199,6 @@ class PlateLoadTestApp(QWidget):
         form_layout.addRow(self.lever_ratio_label, self.lever_ratio)
         form_layout.addRow("Calculation Method", self.method_selector)
 
-
         scale_factor = self.devicePixelRatioF()
         label_width = int(60 * scale_factor)
         for i in range(form_layout.rowCount()):
@@ -233,19 +232,16 @@ class PlateLoadTestApp(QWidget):
         clear_btn = QPushButton("Clear")
         calc_btn = QPushButton("Evaluate")
         export_btn = QPushButton("Export to PDF")
-        maximize_btn = QPushButton("Maximize Graph")
 
         action_buttons_layout.addWidget(self.add_row_btn)
         action_buttons_layout.addWidget(clear_btn)
         action_buttons_layout.addWidget(calc_btn)
         action_buttons_layout.addWidget(export_btn)
-        action_buttons_layout.addWidget(maximize_btn)
 
         self.add_row_btn.clicked.connect(self.add_row)
         clear_btn.clicked.connect(self.clear_fields)
         calc_btn.clicked.connect(self.run_selected_method)
         export_btn.clicked.connect(lambda: export_to_pdf(self))
-        maximize_btn.clicked.connect(self.show_fullscreen_graph)
 
         self.graphs_stack = QStackedWidget()
         self.graph_container = QWidget()
@@ -358,25 +354,55 @@ class PlateLoadTestApp(QWidget):
             self.table.setCellWidget(i, 5, delete_btn)
 
     def clear_fields(self):
-        self.test_id.clear()
-        self.plate_diameter.setCurrentIndex(0)
-        self.lever_ratio.setText("1.000")
-        self.table.setRowCount(14)
-        self.setup_table_rows(14)
-        for row in range(14):
-            for col in range(2):
-                self.table.setItem(row, col, QTableWidgetItem(""))
-            combo = self.table.cellWidget(row, 2)
-            if isinstance(combo, QComboBox):
-                combo.setCurrentIndex(0)
-        self.ax.clear()
-        self.canvas.draw()
-        self.result_label.setText("\nResults will be shown here.")
-
-    def show_fullscreen_graph(self):
-        self.graph_window = GraphWindow(self.figure)
-        self.graph_window.show()
-
+       # Clear text fields
+       fields = [
+           self.test_id, self.company_name, self.company_slogan, self.code, self.version,
+           self.date, self.other_info, self.client_name, self.project_name,
+           self.contractor_name, self.request_number, self.weather_temp,
+           self.designed_by, self.measured_by, self.supervisor, self.laboratory,
+           self.material_type, self.lever_ratio
+       ]
+       for field in fields:
+           field.clear()
+   
+       # Reset combo boxes
+       self.plate_diameter.setCurrentIndex(0)
+       self.measurement_device_selector.setCurrentIndex(0)
+       self.method_selector.setCurrentIndex(0)
+   
+       # Reset visibility of lever ratio
+       self.toggle_lever_ratio_field()
+   
+       # Clear table contents
+       self.table.setRowCount(14)
+       for row in range(14):
+           for col in range(self.table.columnCount()):
+               item = self.table.item(row, col)
+               if item:
+                   self.table.setItem(row, col, QTableWidgetItem(""))
+               widget = self.table.cellWidget(row, col)
+               if isinstance(widget, QLineEdit):
+                   widget.clear()
+               elif hasattr(widget, 'setCurrentIndex'):
+                   widget.setCurrentIndex(0)
+   
+       # Reset company and accreditation logos
+       self.company_logo_preview.clear()
+       self.company_logo_container.hide()
+       self.company_logo_remove_btn.hide()
+       self.company_logo_path = None
+   
+       self.accreditation_logo_preview.clear()
+       self.accreditation_logo_container.hide()
+       self.accreditation_logo_remove_btn.hide()
+       self.accreditation_logo_path = None
+   
+       # Clear graphs
+       while self.graphs_stack.count():
+           widget = self.graphs_stack.widget(0)
+           self.graphs_stack.removeWidget(widget)
+           widget.deleteLater()
+   
     def run_selected_method(self):
         method = self.method_selector.currentText()
         if method == "DIN 18134 official method (2nd-degree curve fit)":
