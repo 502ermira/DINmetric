@@ -143,9 +143,9 @@ def export_to_pdf(app):
         draw_metadata_section(fig, app)
         
         # Title
-        fig.text(0.5, 0.7, "Summary of EV Results", ha='center', fontsize=14, fontweight='600')
-        fig.text(0.15, 0.7, f"Test ID: {app.test_id.text()}", ha='center', fontsize=9)
-        fig.text(0.5, 0.57, f"Static Plate Strain Modulus (D = {plate_diameter} mm) ~ DIN 18134:2012-04", ha='center', fontsize=12)
+        fig.text(0.5, 0.722, "Summary of EV Results", ha='center', fontsize=14, fontweight='600')
+        fig.text(0.15, 0.722, f"Test ID: {app.test_id.text()}", ha='center', fontsize=9)
+        fig.text(0.5, 0.688, f"Static Plate Strain Modulus (D = {plate_diameter} mm) ~ DIN 18134:2012-04", ha='center', fontsize=12)
         
         # Prepare Table Data
         summary_headers = ["Test Point", "Station", "Side", "Type of Material", "Ev₁ (MN/m²)", "Ev₂ (MN/m²)", "Ev₂/Ev₁"]
@@ -162,19 +162,35 @@ def export_to_pdf(app):
                 f"{result['ev2_ev1_ratio']:.2f}" if result['ev2_ev1_ratio'] else "-"
             ])
         
-        # Draw Table
-        table_ax = fig.add_axes([0.05, 0.15, 0.9, 0.7])
+        ROW_HEIGHT = 0.05
+        HEADER_HEIGHT = 0.05
+        NUM_ROWS = len(summary_data)
+        TOTAL_HEIGHT = HEADER_HEIGHT + NUM_ROWS * ROW_HEIGHT
+        
+        TABLE_TOP_Y = 0.64
+        TABLE_BOTTOM_Y = TABLE_TOP_Y - TOTAL_HEIGHT
+        
+        TABLE_WIDTH = 0.86
+        
+        table_ax = fig.add_axes([0.07, TABLE_BOTTOM_Y, TABLE_WIDTH, TOTAL_HEIGHT])
         table_ax.axis('off')
         
+        # Draw the table
         table = table_ax.table(
             cellText=summary_data,
             colLabels=summary_headers,
             cellLoc='center',
-            loc='center'
+            loc='upper center'
         )
+        
         table.auto_set_font_size(False)
-        table.set_fontsize(8)
-        table.scale(1, 1.4)
+        table.set_fontsize(8.5)
+        table.scale(1, 1.2)
+        
+        line_width = 0.6
+        
+        for (i, j), cell in table.get_celld().items():
+            cell.set_linewidth(line_width)
 
         # Note
         fig.text(0.08, 0.08, "*Note: The results apply to the measured points.", ha='left', fontsize=8, style='italic')
