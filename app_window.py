@@ -12,8 +12,6 @@ from constants import CYCLE_TYPES
 from data_handler import evaluate_test_secant
 from data_handler import evaluate_test_curve_fit
 from pdf_exporter import export_to_pdf
-from graph_window import GraphWindow
-
 
 class PlateLoadTestApp(QWidget):
     def __init__(self):
