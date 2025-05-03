@@ -12,6 +12,7 @@ import tempfile
 from datetime import datetime
 import os
 import numpy as np
+from PIL import Image as PILImage
 
 def export_to_pdf(app):
     if app.graphs_stack.count() == 0:
@@ -354,7 +355,7 @@ def add_graph_pages(app, elements, styles):
 
     elements.append(Spacer(1, 0.1 * inch))
 
-    for i in range(app.graphs_stack.count()):
+    for i in range(app.graphs_stack.count()): 
         def p(text, style=styles['Normal']):
             return Paragraph(text, style)
     
@@ -367,23 +368,24 @@ def add_graph_pages(app, elements, styles):
         
         logo_row.append(Spacer(15*cm, 2*cm))
         
+        # Create a table with the logo and spacer
         elements.append(Table([logo_row], colWidths=[3*cm, 15*cm]))
         elements.append(Spacer(1, 12))
-
+    
         page_widget = app.graphs_stack.widget(i)
         layout = page_widget.layout()
         group_raw_points = getattr(page_widget, 'group_raw_points', [])
-
+    
         if not group_raw_points or not isinstance(group_raw_points, list):
             continue
-
+    
         test_number = i + 1
         if i >= len(app.summary_results):
             continue
-
+    
         station = app.summary_results[test_number - 1]['station']
         side = app.summary_results[test_number - 1]['side']
-
+    
         # Centered title
         elements.append(Paragraph(
             f"Static Plate Strain Modulus (D = {plate_diameter} mm) ~ DIN 18134:2012-04", 
@@ -396,9 +398,9 @@ def add_graph_pages(app, elements, styles):
             f"Test Point {test_number} | Station: {station} | Side: {side}", 
             ParagraphStyle('centered_info', parent=styles['Normal'], alignment=1, fontSize=11)
         ))
-
+    
         elements.append(Spacer(1, 20))
-
+    
         # Metadata Table
         metadata_table_data = [
             ["Client:", app.client_name.text()],
@@ -417,21 +419,21 @@ def add_graph_pages(app, elements, styles):
         ]))
         elements.append(table)
         elements.append(Spacer(1, 20))
-
+    
         # Load-settlement-stress table creation
         area = np.pi * (float(plate_diameter) / 1000) ** 2 / 4
         raw_data = []
-
+    
         grouped_data = {
             "First Loading": [],
             "Unloading": [],
             "Second Loading": []
         }
-
+    
         for load, settlement, cycle in group_raw_points:
             if cycle in grouped_data:
                 grouped_data[cycle].append((load, settlement))
-
+    
         for key in ["First Loading", "Unloading", "Second Loading"]:
             for load, settlement in grouped_data[key]:
                 stress = load / area / 1000
@@ -443,7 +445,7 @@ def add_graph_pages(app, elements, styles):
             if key != "Second Loading":
                 raw_data.append(["", "", ""]) 
                 raw_data.append(["", "", ""])
-
+    
         header_style = ParagraphStyle(
             'header_style',
             fontSize=8,
@@ -452,14 +454,14 @@ def add_graph_pages(app, elements, styles):
             spaceBefore=0,
             leading=9
         )
-
+    
         # Header with name and unit split
         raw_headers = [
             Paragraph("Load<br/><font size=7>(kN)</font>", header_style),
             Paragraph("Stress<br/><font size=7>(MN/m²)</font>", header_style),
             Paragraph("Settlement<br/><font size=7>(mm)</font>", header_style)
         ]
-
+    
         # Create the table with tighter columns
         stress_table = Table([raw_headers] + raw_data, colWidths=[1.8*cm, 1.8*cm, 1.8*cm])
         stress_table.setStyle(TableStyle([
@@ -470,45 +472,56 @@ def add_graph_pages(app, elements, styles):
             ('TOPPADDING', (0, 0), (-1, -1), 1),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
         ]))
-
+    
         # Plot to image
         canvas = layout.itemAt(0).widget()
         fig = canvas.figure
-
-        fig_width_in, fig_height_in = fig.get_size_inches()
-        aspect_ratio = fig_height_in / fig_width_in
-        max_total_width_cm = 18
-        stress_table_width_cm = 6.5
-        max_image_width_cm = max_total_width_cm - stress_table_width_cm
-        image_width_cm = min(fig_width_in * inch / cm, max_image_width_cm)
-        image_height_cm = image_width_cm * aspect_ratio
-
+    
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmpfile:
             FigureCanvas(fig).print_png(tmpfile.name)
+    
+            # Load image size
+            img_reader = PILImage.open(tmpfile.name)
+            image_width_px, image_height_px = img_reader.size
+            dpi = fig.get_dpi()
+    
+            # Convert to cm
+            image_width_cm = image_width_px / dpi * 2.54
+            image_height_cm = image_height_px / dpi * 2.54
+            aspect_ratio = image_height_cm / image_width_cm
+    
             plot_image = Image(tmpfile.name, width=image_width_cm * cm, height=image_height_cm * cm)
-
-            stress_table_width_cm = 1.8 * 3
-            spacer_cm = 0.5
-            
-            max_total_width_cm = 18
-            image_width_cm = max_total_width_cm - stress_table_width_cm - spacer_cm
-            image_height_cm = image_width_cm * aspect_ratio
-            
-            plot_image = Image(tmpfile.name, width=image_width_cm * cm, height=image_height_cm * cm)
-            
+    
+            # Estimate row height and table height
+            table_height_lines = len(stress_table._cellvalues)
+            row_height_cm = 0.5
+            table_height_cm = table_height_lines * row_height_cm
+            vertical_padding_cm = max((image_height_cm - table_height_cm) / 2, 0)
+    
+            # Wrap the table with padding
+            stress_table_flowable = [
+                Spacer(1, vertical_padding_cm * cm),
+                stress_table,
+                Spacer(1, vertical_padding_cm * cm)
+            ]
+    
+            table_column = []
+            table_column.extend(stress_table_flowable)
+    
+            # Assemble final layout
             combined_table = Table(
-                [[stress_table, Spacer(spacer_cm * cm, 1), plot_image]],
-                colWidths=[stress_table_width_cm * cm, spacer_cm * cm, image_width_cm * cm],
+                [[table_column, plot_image]],
+                colWidths=[(image_width_cm * 0.35) * cm, image_width_cm * cm],
                 hAlign='CENTER'
             )
             combined_table.setStyle(TableStyle([
-                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('LEFTPADDING', (0, 0), (-1, -1), 0),
                 ('RIGHTPADDING', (0, 0), (-1, -1), 0),
                 ('TOPPADDING', (0, 0), (-1, -1), 0),
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
             ]))
-
+    
         elements.append(combined_table)
         elements.append(Spacer(1, 12))
 
