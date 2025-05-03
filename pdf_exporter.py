@@ -8,11 +8,17 @@ from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
 from reportlab.pdfgen import canvas
 from functools import partial
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+import matplotlib.pyplot as plt
 import tempfile
 from datetime import datetime
 import os
 import numpy as np
 from PIL import Image as PILImage
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.rl_config import defaultEncoding
+
+pdfmetrics.registerFont(TTFont("DejaVuSans", "fonts/DejaVuSans.ttf"))
 
 def export_to_pdf(app):
     if app.graphs_stack.count() == 0:
@@ -312,9 +318,9 @@ def add_summary_page(app, elements, styles):
         Paragraph("Station", styles['Normal']),
         Paragraph("Side", styles['Normal']),
         Paragraph("Type of Material", styles['Normal']),
-        Paragraph("Ev<sub>1</sub> (MN/m²)", styles['Normal']),
-        Paragraph("Ev<sub>2</sub> (MN/m²)", styles['Normal']),
-        Paragraph("Ev<sub>2</sub>/Ev<sub>1</sub>", styles['Normal']),
+        Paragraph("Ev₁ (MN/m²)", styles['Normal']),
+        Paragraph("Ev₂ (MN/m²)", styles['Normal']),
+        Paragraph("Ev₂/Ev₁", styles['Normal']),
     ]
 
     summary_data = []
@@ -341,7 +347,7 @@ def add_summary_page(app, elements, styles):
         ('GRID', (0,0), (-1,-1), 0.5, colors.black),
         ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTNAME', (0,0), (-1,-1), 'DejaVuSans'),
         ('FONTSIZE', (0,0), (-1,-1), 8.5),
     ]))
 
@@ -354,7 +360,7 @@ def add_graph_pages(app, elements, styles):
     plate_diameter = app.plate_diameter.currentText()
 
     elements.append(Spacer(1, 0.1 * inch))
-
+ 
     for i in range(app.graphs_stack.count()): 
         def p(text, style=styles['Normal']):
             return Paragraph(text, style)
@@ -473,57 +479,176 @@ def add_graph_pages(app, elements, styles):
             ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
         ]))
     
-        # Plot to image
+        # Plot to image - create a NEW figure for PDF export only
         canvas = layout.itemAt(0).widget()
-        fig = canvas.figure
-    
+        original_fig = canvas.figure
+        
+        # Create a new figure specifically for PDF export
+        pdf_fig = plt.figure(figsize=(8, 6), dpi=300)
+        new_ax = pdf_fig.add_subplot(111)
+        orig_ax = original_fig.axes[0]
+        
+        # Copy all lines and their properties
+        for orig_line in orig_ax.lines:
+            xdata = orig_line.get_xdata()
+            ydata = orig_line.get_ydata()
+        
+            if len(set(xdata)) == 1:
+                x = xdata[0]
+                new_ax.axvline(
+                    x=x,
+                    color=orig_line.get_color(),
+                    linestyle=orig_line.get_linestyle(),
+                    linewidth=orig_line.get_linewidth() * 1.5,
+                    label=orig_line.get_label() if orig_line.get_label() != '_nolegend_' else None
+                )
+            elif len(set(ydata)) == 1:  # Horizontal line
+                y = ydata[0]
+                new_ax.axhline(
+                    y=y,
+                    color=orig_line.get_color(),
+                    linestyle=orig_line.get_linestyle(),
+                    linewidth=orig_line.get_linewidth() * 1.5,
+                    label=orig_line.get_label() if orig_line.get_label() != '_nolegend_' else None
+                )
+            else:
+                # Regular line
+                new_ax.plot(
+                    xdata,
+                    ydata,
+                    color=orig_line.get_color(),
+                    linestyle=orig_line.get_linestyle(),
+                    linewidth=orig_line.get_linewidth() * 1.5,
+                    marker=orig_line.get_marker(),
+                    markersize=orig_line.get_markersize(),
+                    label=orig_line.get_label() if orig_line.get_label() != '_nolegend_' else None
+                )
+
+        # Copy patches (like bars, rectangles, etc.)
+        for patch in orig_ax.patches:
+            new_patch = copy.copy(patch)
+            new_ax.add_patch(new_patch)
+        
+        # Copy collections (like scatter plots)
+        for collection in orig_ax.collections:
+            new_collection = copy.copy(collection)
+            new_ax.add_collection(new_collection)
+        
+        # Copy text elements
+        for text in orig_ax.texts:
+            if text.get_transform() == orig_ax.transData:
+                # Probably a manual annotation, safe to copy
+                font_props = text.get_fontproperties()
+                new_ax.text(text.get_position()[0], text.get_position()[1],
+                            text.get_text(),
+                            fontsize=font_props.get_size(),
+                            fontfamily=font_props.get_family()[0] if font_props.get_family() else None,
+                            fontweight=font_props.get_weight(),
+                            fontstyle=font_props.get_style(),
+                            transform=text.get_transform())
+
+        # Copy axis properties
+        new_ax.set_xlabel(orig_ax.get_xlabel(), fontsize=10)
+        new_ax.set_ylabel(orig_ax.get_ylabel(), fontsize=10)
+        new_ax.set_title(orig_ax.get_title(), fontsize=11.5)
+        new_ax.tick_params(axis='both', which='major', labelsize=9)
+        
+        # FORCE GRID TO APPEAR with nice styling
+        new_ax.grid(True, which='both', linestyle='--', linewidth=0.5, alpha=0.7)
+        
+        # Copy axis limits
+        new_ax.set_xlim(orig_ax.get_xlim())
+        new_ax.set_ylim(orig_ax.get_ylim())
+        
+        # Copy tick labels and formatting
+        new_ax.xaxis.set_major_formatter(orig_ax.xaxis.get_major_formatter())
+        new_ax.yaxis.set_major_formatter(orig_ax.yaxis.get_major_formatter())
+        
+        # Copy legend if it exists
+        if orig_ax.get_legend() is not None:
+            handles, labels = orig_ax.get_legend_handles_labels()
+            legend = new_ax.legend(handles, labels, 
+                                 loc=orig_ax.get_legend()._loc)
+            # Set legend font properties
+            for text in legend.get_texts():
+                orig_text = orig_ax.get_legend().get_texts()[0]
+                font_props = orig_text.get_fontproperties()
+                text.set_fontsize(font_props.get_size())
+                text.set_family(font_props.get_family()[0] if font_props.get_family() else None)
+                text.set_weight(font_props.get_weight())
+                text.set_style(font_props.get_style())
+        
+        # Save the PDF-specific figure
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmpfile:
-            FigureCanvas(fig).print_png(tmpfile.name)
-    
-            # Load image size
-            img_reader = PILImage.open(tmpfile.name)
-            image_width_px, image_height_px = img_reader.size
-            dpi = fig.get_dpi()
-    
-            # Convert to cm
-            image_width_cm = image_width_px / dpi * 2.54
-            image_height_cm = image_height_px / dpi * 2.54
-            aspect_ratio = image_height_cm / image_width_cm
-    
-            plot_image = Image(tmpfile.name, width=image_width_cm * cm, height=image_height_cm * cm)
-    
-            # Estimate row height and table height
-            table_height_lines = len(stress_table._cellvalues)
-            row_height_cm = 0.5
-            table_height_cm = table_height_lines * row_height_cm
-            vertical_padding_cm = max((image_height_cm - table_height_cm) / 2, 0)
-    
-            # Wrap the table with padding
-            stress_table_flowable = [
-                Spacer(1, vertical_padding_cm * cm),
-                stress_table,
-                Spacer(1, vertical_padding_cm * cm)
-            ]
-    
-            table_column = []
-            table_column.extend(stress_table_flowable)
-    
-            # Assemble final layout
-            combined_table = Table(
-                [[table_column, plot_image]],
-                colWidths=[(image_width_cm * 0.35) * cm, image_width_cm * cm],
-                hAlign='CENTER'
-            )
-            combined_table.setStyle(TableStyle([
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('LEFTPADDING', (0, 0), (-1, -1), 0),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                ('TOPPADDING', (0, 0), (-1, -1), 0),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-            ]))
-    
+            pdf_fig.savefig(tmpfile.name, dpi=300, bbox_inches='tight', facecolor='white')
+            
+            # Load image and calculate dimensions
+            img = PILImage.open(tmpfile.name)
+            img_width_px, img_height_px = img.size
+            image_width_cm = img_width_px / 300 * 2.54
+            image_height_cm = img_height_px / 300 * 2.54
+            
+            # Page layout calculations
+            PAGE_WIDTH = 21 * cm
+            LEFT_MARGIN = 1 * cm
+            RIGHT_MARGIN = 1 * cm
+            GAP = 0.1 * cm
+            available_width = PAGE_WIDTH - LEFT_MARGIN - RIGHT_MARGIN
+            table_width = 5.4 * cm  # 3 columns × 1.8cm
+            max_plot_width = available_width - table_width - GAP
+            
+            # Scale plot if needed while maintaining aspect ratio
+            if image_width_cm * cm > max_plot_width:
+                scale_factor = float(max_plot_width) / float(image_width_cm * cm)
+                plot_width = max_plot_width
+                plot_height = image_height_cm * cm * scale_factor
+            else:
+                plot_width = image_width_cm * cm
+                plot_height = image_height_cm * cm
+            
+            plot_image = Image(tmpfile.name, width=plot_width, height=plot_height)
+        
+        # Clean up the PDF figure
+        plt.close(pdf_fig)
+        
+        table_height_lines = len(stress_table._cellvalues)
+        row_height_cm = 0.5
+        table_height_cm = table_height_lines * row_height_cm
+        vertical_padding_cm = max((plot_height/cm - table_height_cm) / 2, 0)
+        
+        table_with_padding = [
+            Spacer(1, vertical_padding_cm * cm),
+            stress_table,
+            Spacer(1, vertical_padding_cm * cm)
+        ]
+        
+        content_row = [
+            Spacer(LEFT_MARGIN, 0),
+            table_with_padding,
+            Spacer(GAP, 0),
+            plot_image,
+            Spacer(RIGHT_MARGIN, 0)
+        ]
+        
+        col_widths = [
+            LEFT_MARGIN,
+            table_width,
+            GAP,
+            plot_width,
+            RIGHT_MARGIN
+        ]
+        
+        combined_table = Table([content_row], colWidths=col_widths)
+        combined_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        
         elements.append(combined_table)
-        elements.append(Spacer(1, 12))
+        elements.append(Spacer(1, 20))
 
         # EV Table
         ev_table_widget = layout.itemAt(1).layout().itemAt(1).widget()
@@ -539,11 +664,13 @@ def add_graph_pages(app, elements, styles):
 
             ev_table = Table([headers] + ev_data, colWidths=[None]*len(headers))
             ev_table.setStyle(TableStyle([
+                ('FONTNAME', (0,0), (-1,-1), 'DejaVuSans'),
                 ('GRID', (0,0), (-1,-1), 0.5, colors.black),
                 ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
                 ('ALIGN', (0,0), (-1,-1), 'CENTER'),
                 ('FONTSIZE', (0,0), (-1,-1), 8),
             ]))
+
             elements.append(ev_table)
             if i < app.graphs_stack.count() - 1:
                 elements.append(PageBreak())
