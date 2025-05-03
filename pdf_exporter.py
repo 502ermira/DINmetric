@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QFileDialog
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Image, Spacer, PageBreak
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Image, Spacer, PageBreak, KeepTogether
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch, cm
@@ -181,23 +181,37 @@ def export_to_pdf(app):
         
         elif page_num == 2:
             date_x = doc_obj.leftMargin
+        
             canvas_obj.setFont("Helvetica-Oblique", 8)
             canvas_obj.drawString(date_x, footer_y + line_spacing * 2, "*Note: The results apply to the measured points.")
-            
+        
             designer_x = doc_obj.pagesize[0] - doc_obj.rightMargin
-            canvas_obj.drawRightString(designer_x, footer_y + line_spacing*3, "Measurements done by:")
+        
+            canvas_obj.setFont("Helvetica", 10)
+            canvas_obj.drawRightString(designer_x, footer_y + line_spacing * 3, "Measurements done by:")
             canvas_obj.drawRightString(designer_x, footer_y + line_spacing, "_______________________")
             canvas_obj.drawRightString(designer_x, footer_y, app.measured_by.text())
-    
-        elif page_num == 3:
-            canvas_obj.setFont("Helvetica-Oblique", 8)
-            canvas_obj.setFillColor(colors.darkgrey)
-            canvas_obj.drawCentredString(doc_obj.pagesize[0] / 2.0, footer_y, "Third page footer — Custom footer text")
+
+        elif page_num >= 3:
+            date_x = doc_obj.leftMargin
+            canvas_obj.setFont("Helvetica", 8)
+            canvas_obj.drawString(date_x, footer_y + line_spacing * 2, f"Supervisor: {app.supervisor.text()}")
+            canvas_obj.drawString(date_x, footer_y + line_spacing, f"The Contractor: {app.contractor_name.text()}")
+            canvas_obj.drawString(date_x, footer_y, f"Laboratory Technician: {app.laboratory.text()}")
             
         # Common centered footer note
         canvas_obj.setFont("Helvetica-Oblique", 7)
         canvas_obj.setFillColor(colors.grey)
-        canvas_obj.drawCentredString(doc_obj.pagesize[0] / 2.0, (1.3 * cm) - line_spacing, "Test report generated in compliance with DIN 18134:2012-04 | Software: DINmetric")
+        canvas_obj.drawCentredString(doc_obj.pagesize[0] / 2.0, (1.85 * cm) - line_spacing, "Test report generated in compliance with DIN 18134:2012-04 | Software: DINmetric")
+        if page_num > 1:
+            canvas_obj.setFont("Helvetica", 7.5)
+            canvas_obj.setFillColor(colors.black)
+            canvas_obj.drawCentredString(
+                doc_obj.pagesize[0] / 2.0,
+                1 * cm, 
+                f"Page {page_num}"
+        )
+
     
         canvas_obj.restoreState()
     
@@ -333,14 +347,29 @@ def add_summary_page(app, elements, styles):
     elements.append(table)
     elements.append(PageBreak())
 
-def add_graph_pages(app, elements, styles):
-    from reportlab.platypus import Image, Paragraph, Spacer, Table, TableStyle, PageBreak
-    from reportlab.lib.styles import ParagraphStyle
-    from reportlab.lib import colors
 
+def add_graph_pages(app, elements, styles):
+    
     plate_diameter = app.plate_diameter.currentText()
 
+    elements.append(Spacer(1, 0.1 * inch))
+
     for i in range(app.graphs_stack.count()):
+        def p(text, style=styles['Normal']):
+            return Paragraph(text, style)
+    
+        logo_row = []
+        
+        if app.company_logo_path and os.path.exists(app.company_logo_path):
+            logo_row.append(Image(app.company_logo_path, width=3*cm, height=2*cm))
+        else:
+            logo_row.append(Spacer(3*cm, 2*cm))
+        
+        logo_row.append(Spacer(15*cm, 2*cm))
+        
+        elements.append(Table([logo_row], colWidths=[3*cm, 15*cm]))
+        elements.append(Spacer(1, 12))
+
         page_widget = app.graphs_stack.widget(i)
         layout = page_widget.layout()
         group_raw_points = getattr(page_widget, 'group_raw_points', [])
@@ -355,11 +384,20 @@ def add_graph_pages(app, elements, styles):
         station = app.summary_results[test_number - 1]['station']
         side = app.summary_results[test_number - 1]['side']
 
-        elements.append(Paragraph(f"<b>Test Point {test_number}</b> | Station: {station} | Side: {side}", styles['Normal']))
+        # Centered title
         elements.append(Paragraph(
-            f"Static Plate Strain Modulus (D = {plate_diameter} mm) ~ DIN 18134:2012-04",
-            ParagraphStyle('subtitle', fontSize=11, alignment=1, spaceAfter=8)
+            f"Static Plate Strain Modulus (D = {plate_diameter} mm) ~ DIN 18134:2012-04", 
+            ParagraphStyle('title', fontSize=13.5, alignment=1)
         ))
+        
+        elements.append(Spacer(1, 12))
+        
+        elements.append(Paragraph(
+            f"Test Point {test_number} | Station: {station} | Side: {side}", 
+            ParagraphStyle('centered_info', parent=styles['Normal'], alignment=1, fontSize=11)
+        ))
+
+        elements.append(Spacer(1, 20))
 
         # Metadata Table
         metadata_table_data = [
@@ -370,7 +408,7 @@ def add_graph_pages(app, elements, styles):
             ["Date:", app.date.text()],
             ["Weather/Temperature:", app.weather_temp.text()],
         ]
-        table = Table(metadata_table_data, colWidths=[5*cm, 10*cm])
+        table = Table(metadata_table_data, colWidths=[3.5*cm, 13.5*cm])
         table.setStyle(TableStyle([
             ('GRID', (0,0), (-1,-1), 0.5, colors.black),
             ('FONTSIZE', (0,0), (-1,-1), 8),
@@ -378,19 +416,9 @@ def add_graph_pages(app, elements, styles):
             ('ALIGN', (1,0), (1,-1), 'CENTER'),
         ]))
         elements.append(table)
-        elements.append(Spacer(1, 12))
+        elements.append(Spacer(1, 20))
 
-        # Plot to image
-        canvas = layout.itemAt(0).widget()
-        fig = canvas.figure
-        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmpfile:
-            FigureCanvas(fig).print_png(tmpfile.name)
-            elements.append(Image(tmpfile.name, width=12*cm, height=6*cm))
-
-        elements.append(Spacer(1, 12))
-
-        # Load-settlement-stress table
-        raw_headers = ["Load (kN)", "Stress (MN/m²)", "Settlement (mm)"]
+        # Load-settlement-stress table creation
         area = np.pi * (float(plate_diameter) / 1000) ** 2 / 4
         raw_data = []
 
@@ -412,16 +440,76 @@ def add_graph_pages(app, elements, styles):
                     f"{stress:.3f}",
                     f"{settlement:.2f}"
                 ])
-            raw_data.append(["", "", ""])  # Spacer row
+            if key != "Second Loading":
+                raw_data.append(["", "", ""]) 
+                raw_data.append(["", "", ""])
 
-        table = Table([raw_headers] + raw_data, colWidths=[3*cm]*3)
-        table.setStyle(TableStyle([
+        header_style = ParagraphStyle(
+            'header_style',
+            fontSize=8,
+            alignment=1,
+            spaceAfter=0,
+            spaceBefore=0,
+            leading=9
+        )
+
+        # Header with name and unit split
+        raw_headers = [
+            Paragraph("Load<br/><font size=7>(kN)</font>", header_style),
+            Paragraph("Stress<br/><font size=7>(MN/m²)</font>", header_style),
+            Paragraph("Settlement<br/><font size=7>(mm)</font>", header_style)
+        ]
+
+        # Create the table with tighter columns
+        stress_table = Table([raw_headers] + raw_data, colWidths=[1.8*cm, 1.8*cm, 1.8*cm])
+        stress_table.setStyle(TableStyle([
             ('GRID', (0,0), (-1,-1), 0.5, colors.black),
             ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
             ('ALIGN', (0,0), (-1,-1), 'CENTER'),
             ('FONTSIZE', (0,0), (-1,-1), 8),
+            ('TOPPADDING', (0, 0), (-1, -1), 1),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
         ]))
-        elements.append(table)
+
+        # Plot to image
+        canvas = layout.itemAt(0).widget()
+        fig = canvas.figure
+
+        fig_width_in, fig_height_in = fig.get_size_inches()
+        aspect_ratio = fig_height_in / fig_width_in
+        max_total_width_cm = 18
+        stress_table_width_cm = 6.5
+        max_image_width_cm = max_total_width_cm - stress_table_width_cm
+        image_width_cm = min(fig_width_in * inch / cm, max_image_width_cm)
+        image_height_cm = image_width_cm * aspect_ratio
+
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmpfile:
+            FigureCanvas(fig).print_png(tmpfile.name)
+            plot_image = Image(tmpfile.name, width=image_width_cm * cm, height=image_height_cm * cm)
+
+            stress_table_width_cm = 1.8 * 3
+            spacer_cm = 0.5
+            
+            max_total_width_cm = 18
+            image_width_cm = max_total_width_cm - stress_table_width_cm - spacer_cm
+            image_height_cm = image_width_cm * aspect_ratio
+            
+            plot_image = Image(tmpfile.name, width=image_width_cm * cm, height=image_height_cm * cm)
+            
+            combined_table = Table(
+                [[stress_table, Spacer(spacer_cm * cm, 1), plot_image]],
+                colWidths=[stress_table_width_cm * cm, spacer_cm * cm, image_width_cm * cm],
+                hAlign='CENTER'
+            )
+            combined_table.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ]))
+
+        elements.append(combined_table)
         elements.append(Spacer(1, 12))
 
         # EV Table
@@ -436,20 +524,15 @@ def add_graph_pages(app, elements, styles):
                     row_data.append(item.text() if item else "")
                 ev_data.append(row_data)
 
-            table = Table([headers] + ev_data, colWidths=[2.5*cm]*len(headers))
-            table.setStyle(TableStyle([
+            ev_table = Table([headers] + ev_data, colWidths=[None]*len(headers))
+            ev_table.setStyle(TableStyle([
                 ('GRID', (0,0), (-1,-1), 0.5, colors.black),
                 ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
                 ('ALIGN', (0,0), (-1,-1), 'CENTER'),
                 ('FONTSIZE', (0,0), (-1,-1), 8),
             ]))
-            elements.append(table)
-            elements.append(Spacer(1, 6))
+            elements.append(ev_table)
+            if i < app.graphs_stack.count() - 1:
+                elements.append(PageBreak())
 
-        # Footer
-        elements.append(Paragraph(f"Supervisor: {app.supervisor.text()}", styles['Normal']))
-        elements.append(Paragraph(f"The Contractor: {app.contractor_name.text()}", styles['Normal']))
-        elements.append(Paragraph(f"Laboratory Technician: {app.laboratory.text()}", styles['Normal']))
-        elements.append(Spacer(1, 6))
-        elements.append(Paragraph("Test report generated in compliance with DIN 18134:2012-04 | Software: DINmetric", ParagraphStyle('footer', fontSize=6.5, textColor=colors.grey)))
-        elements.append(PageBreak())
+    elements.append(Spacer(1, 0.1 * inch))
