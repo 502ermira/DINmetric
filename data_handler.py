@@ -6,6 +6,11 @@ from PyQt5.QtWidgets import QVBoxLayout, QWidget, QMessageBox, QLabel, QTableWid
 from PyQt5.QtCore import Qt
 from constants import CYCLE_TYPES
 from collections import defaultdict
+import warnings
+from numpy.polynomial import Polynomial
+from numpy.polynomial.polynomial import polyfit as np_polyfit
+import numpy.linalg as linalg
+from sklearn.metrics import r2_score
 
 def evaluate_test_secant(app):
     try:
@@ -401,8 +406,31 @@ def evaluate_test_curve_fit(app):
                     fit_stress = stress
                     fit_settl = settlements
 
-                coeffs = np.polyfit(fit_stress, fit_settl, 2)
-                a2, a1, a0 = coeffs
+
+                coeffs, fit_successful, fit_pred = safe_polyfit(fit_stress, fit_settl, degree=2)
+                
+                if not fit_successful:
+                    print(f"⚠️ Fallback to secant: Fit failed or too few points")
+                    from data_handler import evaluate_test_secant
+                    evaluate_test_secant(app)
+                    return
+                
+                # Check R² threshold (0.95)
+                r2 = r2_score(fit_settl, fit_pred)
+                print(f"R² for {cycle}: {r2:.3f}")
+                if r2 < 0.95:
+                    print(f"⚠️ Fallback to secant: Bad fit quality (R²={r2:.3f})")
+                    from data_handler import evaluate_test_secant
+                    evaluate_test_secant(app)
+                    return
+                
+                if not fit_successful:
+                    # Fallback to secant method if curve fit failed
+                    from data_handler import evaluate_test_secant
+                    evaluate_test_secant(app)
+                    return  # Exit current function
+                else:
+                    a2, a1, a0 = coeffs
 
                 sigma_range = np.linspace(np.min(stress), np.max(stress), 200)
                 fit_curve = a0 + a1 * sigma_range + a2 * sigma_range ** 2
@@ -564,3 +592,32 @@ def evaluate_test_curve_fit(app):
     except Exception as e:
         print("!!! ERROR:", str(e))
         QMessageBox.critical(app, "Evaluation Error", str(e))
+
+
+def safe_polyfit(x, y, degree=2):
+    if len(x) < degree + 1:
+        return None, False, None
+
+    x_mean = np.mean(x)
+    x_std = np.std(x)
+    if x_std == 0:
+        return None, False, None
+
+    x_norm = (x - x_mean) / x_std
+
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        coeffs_norm = np.polyfit(x_norm, y, degree)
+
+        for w in caught_warnings:
+            if "polyfit may be poorly conditioned" in str(w.message).lower():
+                return None, False, None
+
+    # Convert normalized poly back to original scale
+    p = np.poly1d(coeffs_norm)
+    t = np.poly1d([1 / x_std, -x_mean / x_std])  # t(x) = (x - mean)/std
+    p_orig = p(t)
+
+    y_pred = p_orig(x)
+
+    return p_orig.coefficients, True, y_pred

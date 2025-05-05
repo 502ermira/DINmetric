@@ -20,6 +20,7 @@ from reportlab.rl_config import defaultEncoding
 
 pdfmetrics.registerFont(TTFont("DejaVuSans", "fonts/DejaVuSans.ttf"))
 
+
 def export_to_pdf(app):
     if app.graphs_stack.count() == 0:
         return
@@ -65,7 +66,7 @@ def export_to_pdf(app):
     metadata_data = [
         [Paragraph(f"<b>{app.company_name.text()}</b>", ParagraphStyle('meta-title', fontSize=12, alignment=1)), 'Code:', app.code.text()],
         ['', 'Version:', app.version.text()],
-        [Paragraph(app.company_slogan.text(), ParagraphStyle('slogan', fontSize=9, alignment=1)), 'Date:', app.date.text()],
+        [Paragraph(app.company_slogan.text(), ParagraphStyle('slogan', fontSize=9.5, alignment=1)), 'Date:', app.date.text()],
         [app.other_info.text(), '', '']
     ]
     
@@ -96,7 +97,7 @@ def export_to_pdf(app):
     test_header_data = [
         [
             Paragraph(f"<b>Test ID:</b> {app.test_id.text()}", ParagraphStyle('test-id', fontSize=9, alignment=0)),
-            Paragraph("<b>Test Report</b>", ParagraphStyle('title', fontSize=14.5, alignment=1)),
+            Paragraph("<b>Test Report</b>", ParagraphStyle('title', fontSize=15, alignment=1)),
             Paragraph("<b> </b>", ParagraphStyle('space', fontSize=14.5, alignment=1)),
         ]
     ]
@@ -115,9 +116,9 @@ def export_to_pdf(app):
     ]))
 
     elements.append(test_header_table)
-    elements.append(Spacer(1, 10))
+    elements.append(Spacer(1, 12))
     elements.append(p(f"Static Plate Strain Modulus (D = {plate_diameter} mm) ~ DIN 18134:2012-04", ParagraphStyle('subtitle', fontSize=12, alignment=1)))
-    elements.append(Spacer(1, 24))
+    elements.append(Spacer(1, 28))
 
     ## --- Table 1 ---
     table1_data = [
@@ -142,7 +143,7 @@ def export_to_pdf(app):
         ('FONTSIZE', (0,0), (-1,-1), 9),
     ]))
     elements.append(table1)
-    elements.append(Spacer(1, 28))
+    elements.append(Spacer(1, 30))
 
     ## --- Table 2 ---
     table2_data = [
@@ -189,19 +190,19 @@ def export_to_pdf(app):
         elif page_num == 2:
             date_x = doc_obj.leftMargin
         
-            canvas_obj.setFont("Helvetica-Oblique", 8)
+            canvas_obj.setFont("DejaVuSans", 8)
             canvas_obj.drawString(date_x, footer_y + line_spacing * 2, "*Note: The results apply to the measured points.")
         
             designer_x = doc_obj.pagesize[0] - doc_obj.rightMargin
         
-            canvas_obj.setFont("Helvetica", 10)
+            canvas_obj.setFont("DejaVuSans", 10)
             canvas_obj.drawRightString(designer_x, footer_y + line_spacing * 3, "Measurements done by:")
             canvas_obj.drawRightString(designer_x, footer_y + line_spacing, "_______________________")
             canvas_obj.drawRightString(designer_x, footer_y, app.measured_by.text())
 
         elif page_num >= 3:
             date_x = doc_obj.leftMargin
-            canvas_obj.setFont("Helvetica", 8)
+            canvas_obj.setFont("DejaVuSans", 8)
             canvas_obj.drawString(date_x, footer_y + line_spacing * 2, f"Supervisor: {app.supervisor.text()}")
             canvas_obj.drawString(date_x, footer_y + line_spacing, f"The Contractor: {app.contractor_name.text()}")
             canvas_obj.drawString(date_x, footer_y, f"Laboratory Technician: {app.laboratory.text()}")
@@ -313,14 +314,20 @@ def add_summary_page(app, elements, styles):
             print(f"Incomplete summary result: {result}")
             return
 
+    header_style = ParagraphStyle(
+        name='header-style',
+        parent=styles['Normal'],
+        alignment=1
+    )
+    
     summary_headers = [
-        Paragraph("Test Point", styles['Normal']),
-        Paragraph("Station", styles['Normal']),
-        Paragraph("Side", styles['Normal']),
-        Paragraph("Type of Material", styles['Normal']),
-        Paragraph("Ev₁ (MN/m²)", styles['Normal']),
-        Paragraph("Ev₂ (MN/m²)", styles['Normal']),
-        Paragraph("Ev₂/Ev₁", styles['Normal']),
+        Paragraph("Test Point", header_style),
+        Paragraph("Station", header_style),
+        Paragraph("Side", header_style),
+        Paragraph("Type of Material", header_style),
+        Paragraph("Ev<sub>1</sub> (MN/m²)", header_style),
+        Paragraph("Ev<sub>2</sub> (MN/m²)", header_style),
+        Paragraph("Ev<sub>2</sub>/Ev<sub>1</sub>", header_style),
     ]
 
     summary_data = []
@@ -376,7 +383,7 @@ def add_graph_pages(app, elements, styles):
         
         # Create a table with the logo and spacer
         elements.append(Table([logo_row], colWidths=[3*cm, 15*cm]))
-        elements.append(Spacer(1, 12))
+        elements.append(Spacer(1, 10))
     
         page_widget = app.graphs_stack.widget(i)
         layout = page_widget.layout()
