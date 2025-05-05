@@ -152,7 +152,7 @@ def evaluate_test_secant(app):
 
                     delta_sigma = sigma2 - sigma1
                     delta_s = s2 - s1
-                    Ev = (0.75 * 300 * delta_sigma) / delta_s  # Ev in MN/m²
+                    Ev = (0.75 * d * delta_sigma) / delta_s  # Ev in MN/m²
 
                     ev_results.append({
                         'cycle': cycle,

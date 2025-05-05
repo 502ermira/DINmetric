@@ -163,6 +163,41 @@ def export_to_pdf(app):
     elements.append(table2)
     elements.append(Spacer(1, 20))
 
+    # --- Calculation Method Section ---
+    calc_method = app.method_selector.currentText()
+    
+    if "curve" in calc_method.lower():
+        calc_text = (
+            "DINmetric calculates the deformation modulus (Ev) using the curve fitting method as per DIN 18134:2012-04, "
+            "which offers higher accuracy. If the data does not support a reliable fit, the software automatically uses the secant method. "
+            "As a result, different parameters may be displayed in the results table, depending on the method applied to each test point."
+        )
+
+    else:
+        calc_text = (
+            "The deformation modulus (Ev) was calculated using the secant method, "
+            "as selected by the user in DINmetric."
+        )
+    
+    # Title
+    elements.append(Table([[Paragraph("<b>Calculation Method</b>", bold)]], colWidths=[17*cm]))
+    elements.append(Spacer(1, 4))
+    
+    calc_table = Table(
+        [[Paragraph(calc_text, normal)]],
+        colWidths=[17*cm]
+    )
+    calc_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        # Optional: small internal padding for text
+        ('LEFTPADDING', (0, 0), (-1, -1), 2),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+    ]))
+    elements.append(calc_table)
+
+    elements.append(Spacer(1, 20))
+
     elements.append(PageBreak())
     add_summary_page(app, elements, styles)
 

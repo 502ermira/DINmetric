@@ -182,7 +182,7 @@ class PlateLoadTestApp(QWidget):
         self.method_selector = QComboBox()
         self.method_selector.addItems([
             "DIN 18134 official method (2nd-degree curve fit)",
-            "Practical Secant Approximation (not DIN 18134)"
+            "Practical Secant Approximation"
         ])
         
         self.lever_ratio_label.setVisible(False)
@@ -405,10 +405,8 @@ class PlateLoadTestApp(QWidget):
     def run_selected_method(self):
         method = self.method_selector.currentText()
         if method == "DIN 18134 official method (2nd-degree curve fit)":
-            from data_handler import evaluate_test_curve_fit
             evaluate_test_curve_fit(self)
-        elif method == "Practical Secant Approximation (not DIN 18134)":
-            from data_handler import evaluate_test_secant
+        elif method == "Practical Secant Approximation":
             evaluate_test_secant(self)
 
     def show_prev_graph(self):
