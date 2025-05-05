@@ -12,7 +12,7 @@ from numpy.polynomial.polynomial import polyfit as np_polyfit
 import numpy.linalg as linalg
 from sklearn.metrics import r2_score
 
-def evaluate_test_secant(app):
+def evaluate_test_secant(app, external_grouped_data=None):
     try:
         r = float(app.plate_diameter.currentText()) / 2  # radius in mm
         d = r * 2
@@ -20,8 +20,11 @@ def evaluate_test_secant(app):
         area = np.pi * (d / 1000) ** 2 / 4  # m²
 
         CYCLE_TYPES = ["First Loading", "Unloading", "Second Loading"]
-        grouped_data = defaultdict(lambda: {cycle: {'loads': [], 'settlements': []} for cycle in CYCLE_TYPES})
-        app.summary_results = []
+
+        grouped_data = external_grouped_data if external_grouped_data else defaultdict(lambda: {cycle: {'loads': [], 'settlements': []} for cycle in CYCLE_TYPES})
+        if not external_grouped_data:
+            # Only clear results if this is a primary secant call (not fallback)
+            app.summary_results = []
 
         for row in range(app.table.rowCount()):
             try:
@@ -52,10 +55,12 @@ def evaluate_test_secant(app):
         if not grouped_data:
             raise ValueError("No valid data found")
 
-        while app.graphs_stack.count():
-            widget = app.graphs_stack.widget(0)
-            app.graphs_stack.removeWidget(widget)
-            widget.deleteLater()
+        if not external_grouped_data:
+            # Only clear graphs if this is a primary secant call (not fallback)
+            while app.graphs_stack.count():
+                widget = app.graphs_stack.widget(0)
+                app.graphs_stack.removeWidget(widget)
+                widget.deleteLater()
 
         cycle_markers = {
             "First Loading": "o",
@@ -340,7 +345,10 @@ def evaluate_test_curve_fit(app):
         cycle_markers = {"First Loading": "o", "Unloading": "s", "Second Loading": "^"}
         cycle_colors = {"First Loading": "#1f77b4", "Unloading": "#7f7f7f", "Second Loading": "#2ca02c"}
 
+        failed_groups = {}
+
         for (station, side), data_cycles in grouped_data.items():
+            group_failed = False
             group_raw_points = []
             fig, ax = plt.subplots()
             SMALL_SIZE = 7
@@ -395,7 +403,6 @@ def evaluate_test_curve_fit(app):
                     ax.plot(stress, settlements, marker=cycle_markers[cycle],
                             linestyle='None', label=f"{cycle}", color=cycle_colors[cycle], markersize=marker_size, linewidth=line_width_curve)
 
-                # Fit curve for all cycles (including Unloading)
                 if cycle == "First Loading" and len(stress) > 2:
                     fit_stress = stress[1:]
                     fit_settl = settlements[1:]
@@ -407,27 +414,22 @@ def evaluate_test_curve_fit(app):
                 coeffs, fit_successful, fit_pred = safe_polyfit(fit_stress, fit_settl, degree=2)
                 
                 if not fit_successful:
-                    print(f"⚠️ Fallback to secant: Fit failed or too few points")
-                    from data_handler import evaluate_test_secant
-                    evaluate_test_secant(app)
-                    return
+                    print(f"⚠️ Fallback to secant: Fit failed or too few points — deferring to secant method")
+                    failed_groups[(station, side)] = data_cycles
+                    group_failed = True
+                    break
+                else:
+                    a2, a1, a0 = coeffs
                 
                 # Check R² threshold (0.95)
                 r2 = r2_score(fit_settl, fit_pred)
                 print(f"R² for {cycle}: {r2:.3f}")
                 if r2 < 0.95:
-                    print(f"⚠️ Fallback to secant: Bad fit quality (R²={r2:.3f})")
-                    from data_handler import evaluate_test_secant
-                    evaluate_test_secant(app)
-                    return
-                
-                if not fit_successful:
-                    # Fallback to secant method if curve fit failed
-                    from data_handler import evaluate_test_secant
-                    evaluate_test_secant(app)
-                    return  # Exit current function
-                else:
-                    a2, a1, a0 = coeffs
+                    print(f"⚠️ Fallback to secant: Bad fit quality (R²={r2:.3f}) — deferring to secant method")
+                    failed_groups[(station, side)] = data_cycles
+                    fit_successful = False
+                    break  # Exit the current cycle loop
+
 
                 sigma_range = np.linspace(np.min(stress), np.max(stress), 200)
                 fit_curve = a0 + a1 * sigma_range + a2 * sigma_range ** 2
@@ -476,7 +478,11 @@ def evaluate_test_curve_fit(app):
                         
                         ax.text(x_pos, s1, "s₁", va='center', ha='right', transform=ax.get_yaxis_transform(), fontsize=7, clip_on=False)
                         ax.text(x_pos, s2, "s₂", va='center', ha='right', transform=ax.get_yaxis_transform(), fontsize=7, clip_on=False)
-                        
+            if group_failed:
+                plt.close(fig)
+                failed_groups[(station, side)] = data_cycles
+                continue
+
             for ev in ev_results:
                 group_result_lines.append(
                     f"&nbsp;&nbsp;<b>{ev['cycle']}:</b> Ev = {ev['Ev']:.2f} MN/m²<br>"
@@ -582,6 +588,26 @@ def evaluate_test_curve_fit(app):
             page_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             page_widget.setLayout(page_layout)
             app.graphs_stack.addWidget(page_widget)
+      
+        if failed_groups:
+            print(f"⏪ Re-processing {len(failed_groups)} failed groups using secant method")
+            # Store current successful results
+            current_results = app.summary_results.copy()
+            current_graphs = []
+            for i in range(app.graphs_stack.count()):
+                current_graphs.append(app.graphs_stack.widget(i))
+            
+            # Process failed groups with secant method
+            from data_handler import evaluate_test_secant
+            evaluate_test_secant(app, external_grouped_data=failed_groups)
+            
+            # Combine results
+            app.summary_results.extend(current_results)
+            
+            # Re-add the successful graphs to the stack
+            for widget in current_graphs:
+                app.graphs_stack.addWidget(widget)
+
 
         if app.graphs_stack.count() > 0:
             app.graphs_stack.setCurrentIndex(0)
