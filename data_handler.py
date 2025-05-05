@@ -224,10 +224,11 @@ def evaluate_test_secant(app):
 
             ev_table = QTableWidget()
             ev_table.setObjectName("evResultsTable")
-            ev_table.setColumnCount(7)
+            ev_table.setColumnCount(8)
             ev_table.setHorizontalHeaderLabels([
-                " Cycle ", " σ₃ (MN/m²) ", " σ₁ (MN/m²) ", " σ₂ (MN/m²) ", " s₁ (mm) ", " s₂ (mm) ", " Ev (MN/m²) "
+                " Cycle ", " σ₃ (MN/m²) ", " σ₁ (MN/m²) ", " σ₂ (MN/m²) ", " s₁ (mm) ", " s₂ (mm) ", " Ev (MN/m²) ", " Ev₂/Ev₁ "
             ])
+
             ev_table.verticalHeader().setVisible(False)
             ev_table.verticalHeader().setDefaultSectionSize(0)
             ev_table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -244,24 +245,20 @@ def evaluate_test_secant(app):
             ev_table.setRowCount(len(ev_results))
             for i, ev in enumerate(ev_results):
                 ev_table.setItem(i, 0, QTableWidgetItem(ev['cycle']))
-                ev_table.setItem(i, 1, QTableWidgetItem(f" {ev['sigma_max']:.3f} "))
-                ev_table.setItem(i, 2, QTableWidgetItem(f" {ev['sigma1']:.3f} "))
-                ev_table.setItem(i, 3, QTableWidgetItem(f" {ev['sigma2']:.3f} "))
-                ev_table.setItem(i, 4, QTableWidgetItem(f" {ev['s1']:.3f} "))
-                ev_table.setItem(i, 5, QTableWidgetItem(f" {ev['s2']:.3f} "))
-                ev_table.setItem(i, 6, QTableWidgetItem(f" {ev['Ev']:.2f} "))
+                ev_table.setItem(i, 1, QTableWidgetItem(f"{ev['sigma_max']:.3f}"))
+                ev_table.setItem(i, 2, QTableWidgetItem(f"{ev['sigma1']:.3f}"))
+                ev_table.setItem(i, 3, QTableWidgetItem(f"{ev['sigma2']:.3f}"))
+                ev_table.setItem(i, 4, QTableWidgetItem(f"{ev['s1']:.3f}"))
+                ev_table.setItem(i, 5, QTableWidgetItem(f"{ev['s2']:.3f}"))
+                ev_table.setItem(i, 6, QTableWidgetItem(f"{ev['Ev']:.2f}"))
             
-            # Merge Ev2/Ev1 ratio into the last column
-            ev1 = next((ev['Ev'] for ev in ev_results if ev['cycle'] == "First Loading"), None)
-            ev2 = next((ev['Ev'] for ev in ev_results if ev['cycle'] == "Second Loading"), None)
-            
+            # Add merged Ev2/Ev1 value in the last column
             if ev1 and ev2:
                 ev2_ev1_value = f"{ev2 / ev1:.2f}"
                 merged_item = QTableWidgetItem(ev2_ev1_value)
                 merged_item.setTextAlignment(Qt.AlignCenter)
-                ev_table.setItem(0, 6, merged_item)
-                ev_table.setSpan(0, 6, len(ev_results), 1)
-            
+                ev_table.setItem(0, 7, merged_item)
+                ev_table.setSpan(0, 7, len(ev_results), 1)
             # Resize
             ev_table.resizeColumnsToContents()
             ev_table.resizeRowsToContents()
