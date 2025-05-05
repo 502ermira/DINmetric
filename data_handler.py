@@ -591,23 +591,28 @@ def evaluate_test_curve_fit(app):
       
         if failed_groups:
             print(f"⏪ Re-processing {len(failed_groups)} failed groups using secant method")
-            # Store current successful results
+            # Save current results temporarily
             current_results = app.summary_results.copy()
+
             current_graphs = []
             for i in range(app.graphs_stack.count()):
                 current_graphs.append(app.graphs_stack.widget(i))
             
-            # Process failed groups with secant method
-            from data_handler import evaluate_test_secant
+            # Clear summary_results before fallback
+            app.summary_results = []
+            
+            # Process fallback with secant
             evaluate_test_secant(app, external_grouped_data=failed_groups)
             
-            # Combine results
-            app.summary_results.extend(current_results)
-            
+            # Merge results without duplication
+            existing_keys = {(res['station'], res['side']) for res in app.summary_results}
+            for res in current_results:
+                if (res['station'], res['side']) not in existing_keys:
+                    app.summary_results.append(res)
+                        
             # Re-add the successful graphs to the stack
             for widget in current_graphs:
                 app.graphs_stack.addWidget(widget)
-
 
         if app.graphs_stack.count() > 0:
             app.graphs_stack.setCurrentIndex(0)
