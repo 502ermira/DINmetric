@@ -22,6 +22,7 @@ def evaluate_test_secant(app, external_grouped_data=None):
         CYCLE_TYPES = ["First Loading", "Unloading", "Second Loading"]
 
         grouped_data = external_grouped_data if external_grouped_data else defaultdict(lambda: {cycle: {'loads': [], 'settlements': []} for cycle in CYCLE_TYPES})
+        
         if not external_grouped_data:
             # Only clear results if this is a primary secant call (not fallback)
             app.summary_results = []
@@ -54,6 +55,8 @@ def evaluate_test_secant(app, external_grouped_data=None):
 
         if not grouped_data:
             raise ValueError("No valid data found")
+        
+        start_index = app.graphs_stack.count()
 
         if not external_grouped_data:
             # Only clear graphs if this is a primary secant call (not fallback)
@@ -288,6 +291,16 @@ def evaluate_test_secant(app, external_grouped_data=None):
         if app.graphs_stack.count() > 0:
             app.graphs_stack.setCurrentIndex(0)
 
+        # Return fallback widgets if this was a fallback call
+        if external_grouped_data:
+            fallback_widgets = {}
+            for i in range(app.graphs_stack.count()):
+                widget = app.graphs_stack.widget(i)
+                title = widget.layout().itemAt(0).widget().figure.axes[0].get_title()
+                station_side = tuple(x.strip() for x in title.split('|')[0].split('-'))
+                fallback_widgets[station_side] = widget
+            return fallback_widgets
+
     except Exception as e:
         print("!!! ERROR:", str(e))
         QMessageBox.critical(app, "Evaluation Error", str(e))
@@ -335,6 +348,8 @@ def evaluate_test_curve_fit(app):
 
         if not grouped_data:
             raise ValueError("No valid data found")
+        
+        original_order = list(grouped_data.keys())
 
         while app.graphs_stack.count():
             widget = app.graphs_stack.widget(0)
@@ -593,10 +608,14 @@ def evaluate_test_curve_fit(app):
             print(f"⏪ Re-processing {len(failed_groups)} failed groups using secant method")
             # Save current results temporarily
             current_results = app.summary_results.copy()
-
-            current_graphs = []
+            
+            current_graphs = {}
             for i in range(app.graphs_stack.count()):
-                current_graphs.append(app.graphs_stack.widget(i))
+                widget = app.graphs_stack.widget(i)
+                # Store widgets with their (station, side) as key
+                title = widget.layout().itemAt(0).widget().figure.axes[0].get_title()
+                station_side = tuple(x.strip() for x in title.split('|')[0].split('-'))
+                current_graphs[station_side] = widget
             
             # Clear summary_results before fallback
             app.summary_results = []
@@ -605,14 +624,28 @@ def evaluate_test_curve_fit(app):
             evaluate_test_secant(app, external_grouped_data=failed_groups)
             
             # Merge results without duplication
+            # Process fallback and receive fallback widgets
+            fallback_widgets = evaluate_test_secant(app, external_grouped_data=failed_groups)
+            
+            # Merge results without duplication
             existing_keys = {(res['station'], res['side']) for res in app.summary_results}
             for res in current_results:
                 if (res['station'], res['side']) not in existing_keys:
                     app.summary_results.append(res)
-                        
-            # Re-add the successful graphs to the stack
-            for widget in current_graphs:
-                app.graphs_stack.addWidget(widget)
+            
+            # Clear and rebuild the graphs stack in original order
+            while app.graphs_stack.count():
+                app.graphs_stack.removeWidget(app.graphs_stack.widget(0))
+            
+            # Add widgets back in original order, giving priority to fallback results
+            for key in original_order:
+                if key in fallback_widgets:
+                    app.graphs_stack.addWidget(fallback_widgets[key])
+                elif key in current_graphs:
+                    app.graphs_stack.addWidget(current_graphs[key])
+            
+            # Update summary_results order to match original input order
+            app.summary_results.sort(key=lambda x: original_order.index((x['station'], x['side'])))
 
         if app.graphs_stack.count() > 0:
             app.graphs_stack.setCurrentIndex(0)
