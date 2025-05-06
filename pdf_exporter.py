@@ -64,9 +64,9 @@ def export_to_pdf(app):
     
     # --- Metadata Section ---
     metadata_data = [
-        [Paragraph(f"<b>{app.company_name.text()}</b>", ParagraphStyle('meta-title', fontSize=12, alignment=1)), 'Code:', app.code.text()],
-        ['', 'Version:', app.version.text()],
-        [Paragraph(app.company_slogan.text(), ParagraphStyle('slogan', fontSize=9.5, alignment=1)), 'Date:', app.date.text()],
+        [Paragraph(f"<b>{app.company_name.text()}</b>", ParagraphStyle('meta-title', fontSize=12, alignment=1)), app.tr("code"), app.code.text()],
+        ['', app.tr("version"), app.version.text()],
+        [Paragraph(app.company_slogan.text(), ParagraphStyle('slogan', fontSize=9.5, alignment=1)), app.tr("date"), app.date.text()],
         [app.other_info.text(), '', '']
     ]
     
@@ -97,7 +97,7 @@ def export_to_pdf(app):
     test_header_data = [
         [
             Paragraph(f"<b>Test ID:</b> {app.test_id.text()}", ParagraphStyle('test-id', fontSize=9, alignment=0)),
-            Paragraph("<b>Test Report</b>", ParagraphStyle('title', fontSize=15, alignment=1)),
+            Paragraph(f"<b>{app.tr('test_report')}</b>", ParagraphStyle('title', fontSize=15, alignment=1)),
             Paragraph("<b> </b>", ParagraphStyle('space', fontSize=14.5, alignment=1)),
         ]
     ]
@@ -117,22 +117,23 @@ def export_to_pdf(app):
 
     elements.append(test_header_table)
     elements.append(Spacer(1, 12))
-    elements.append(p(f"Static Plate Strain Modulus (D = {plate_diameter} mm) ~ DIN 18134:2012-04", ParagraphStyle('subtitle', fontSize=12, alignment=1)))
+    elements.append(p(f"{app.tr('static_plate_modulus')} (D = {plate_diameter} mm) ~ DIN 18134:2012-04", 
+                 ParagraphStyle('subtitle', fontSize=12, alignment=1)))
     elements.append(Spacer(1, 28))
 
     ## --- Table 1 ---
     table1_data = [
-        ["Client:", app.client_name.text()],
-        ["Project:", app.project_name.text()],
-        ["The Contractor:", app.contractor_name.text()],
-        ["Type of material:", app.material_type.text()],
-        ["Request number:", app.request_number.text()],
-        ["Weather/ Temperature:", app.weather_temp.text()],
-        ["Measurement Device:", measurement_device]
+        [app.tr("client_name"), app.client_name.text()],
+        [app.tr("project_name"), app.project_name.text()],
+        [app.tr("contractor_name"), app.contractor_name.text()],
+        [app.tr("material_type"), app.material_type.text()],
+        [app.tr("request_number"), app.request_number.text()],
+        [app.tr("weather_temp"), app.weather_temp.text()],
+        [app.tr("measurement_device"), measurement_device]
     ]
 
     if measurement_device == "Lever-Arm System":
-        table1_data.append(["Lever Ratio (hp/hm):", app.lever_ratio.text()])
+        table1_data.append([app.tr("lever_ratio"), app.lever_ratio.text()])
 
     table1 = Table(table1_data, colWidths=[4*cm, 13*cm])
     table1.setStyle(TableStyle([
@@ -147,9 +148,9 @@ def export_to_pdf(app):
 
     ## --- Table 2 ---
     table2_data = [
-        ["Measurements Done By:", app.measured_by.text()],
-        ["Supervisor:", app.supervisor.text()],
-        ["Laboratory Technician:", app.laboratory.text()],
+        [app.tr("measured_by"), app.measured_by.text()],
+        [app.tr("supervisor"), app.supervisor.text()],
+        [app.tr("laboratory"), app.laboratory.text()],
     ]
 
     table2 = Table(table2_data, colWidths=[4*cm, 13*cm])
@@ -167,20 +168,12 @@ def export_to_pdf(app):
     calc_method = app.method_selector.currentText()
     
     if "curve" in calc_method.lower():
-        calc_text = (
-            "DINmetric calculates the deformation modulus (Ev) using the curve fitting method as per DIN 18134:2012-04, "
-            "which offers higher accuracy. If the data does not support a reliable fit, the software automatically uses the secant method. "
-            "As a result, different parameters may be displayed in the results table, depending on the method applied to each test point."
-        )
-
+        calc_text = app.tr("curve_method_description")
     else:
-        calc_text = (
-            "The deformation modulus (Ev) was calculated using the secant method, "
-            "as selected by the user in DINmetric."
-        )
+        calc_text = app.tr("secant_method_description")
     
     # Title
-    elements.append(Table([[Paragraph("<b>Calculation Method</b>", bold)]], colWidths=[17*cm]))
+    elements.append(Table([[Paragraph(f"<b>{app.tr('calculation_method')}</b>", bold)]], colWidths=[17*cm]))
     elements.append(Spacer(1, 4))
     
     calc_table = Table(
@@ -214,45 +207,45 @@ def export_to_pdf(app):
     
         if page_num == 1:
             date_x = doc_obj.leftMargin
-            canvas_obj.drawString(date_x, footer_y + line_spacing * 2, "Date:")
+            canvas_obj.drawString(date_x, footer_y + line_spacing * 2, app.tr("date"))
             canvas_obj.drawString(date_x, footer_y, app.date.text())
     
             designer_x = doc_obj.pagesize[0] - doc_obj.rightMargin
-            canvas_obj.drawRightString(designer_x, footer_y + line_spacing*3, "Designed and confirmed by:")
+            canvas_obj.drawRightString(designer_x, footer_y + line_spacing*3, app.tr("designed_by"))
             canvas_obj.drawRightString(designer_x, footer_y + line_spacing, "_______________________")
             canvas_obj.drawRightString(designer_x, footer_y, app.designed_by.text())
         
         elif page_num == 2:
             date_x = doc_obj.leftMargin
         
-            canvas_obj.setFont("DejaVuSans", 8)
-            canvas_obj.drawString(date_x, footer_y + line_spacing * 2, "*Note: The results apply to the measured points.")
+            canvas_obj.setFont("Helvetica", 8)
+            canvas_obj.drawString(date_x, footer_y + line_spacing * 2, app.tr("note"))
         
             designer_x = doc_obj.pagesize[0] - doc_obj.rightMargin
         
-            canvas_obj.setFont("DejaVuSans", 10)
-            canvas_obj.drawRightString(designer_x, footer_y + line_spacing * 3, "Measurements done by:")
+            canvas_obj.setFont("Helvetica", 10)
+            canvas_obj.drawRightString(designer_x, footer_y + line_spacing * 3, app.tr("measured_by"))
             canvas_obj.drawRightString(designer_x, footer_y + line_spacing, "_______________________")
             canvas_obj.drawRightString(designer_x, footer_y, app.measured_by.text())
 
         elif page_num >= 3:
             date_x = doc_obj.leftMargin
             canvas_obj.setFont("DejaVuSans", 8)
-            canvas_obj.drawString(date_x, footer_y + line_spacing * 2, f"Supervisor: {app.supervisor.text()}")
-            canvas_obj.drawString(date_x, footer_y + line_spacing, f"The Contractor: {app.contractor_name.text()}")
-            canvas_obj.drawString(date_x, footer_y, f"Laboratory Technician: {app.laboratory.text()}")
+            canvas_obj.drawString(date_x, footer_y + line_spacing * 2, f"{app.tr('supervisor')} {app.supervisor.text()}")
+            canvas_obj.drawString(date_x, footer_y + line_spacing, f"{app.tr('contractor_name')} {app.contractor_name.text()}")
+            canvas_obj.drawString(date_x, footer_y,f"{app.tr('laboratory')} {app.laboratory.text()}")
             
         # Common centered footer note
         canvas_obj.setFont("Helvetica-Oblique", 7)
         canvas_obj.setFillColor(colors.grey)
-        canvas_obj.drawCentredString(doc_obj.pagesize[0] / 2.0, (1.85 * cm) - line_spacing, "Test report generated in compliance with DIN 18134:2012-04 | Software: DINmetric")
+        canvas_obj.drawCentredString(doc_obj.pagesize[0] / 2.0, (1.85 * cm) - line_spacing, app.tr('footer_compliance'))
         if page_num > 1:
             canvas_obj.setFont("Helvetica", 7.5)
             canvas_obj.setFillColor(colors.black)
             canvas_obj.drawCentredString(
                 doc_obj.pagesize[0] / 2.0,
                 1 * cm, 
-                f"Page {page_num}"
+                f"{page_num}"
         )
 
     
@@ -285,9 +278,9 @@ def add_summary_page(app, elements, styles):
     
     # --- Metadata Section ---
     metadata_data = [
-        [Paragraph(f"<b>{app.company_name.text()}</b>", ParagraphStyle('meta-title', fontSize=12, alignment=1)), 'Code:', app.code.text()],
-        ['', 'Version:', app.version.text()],
-        [Paragraph(app.company_slogan.text(), ParagraphStyle('slogan', fontSize=9, alignment=1)), 'Date:', app.date.text()],
+        [Paragraph(f"<b>{app.company_name.text()}</b>", ParagraphStyle('meta-title', fontSize=12, alignment=1)), app.tr('code'), app.code.text()],
+        ['', app.tr('version'), app.version.text()],
+        [Paragraph(app.company_slogan.text(), ParagraphStyle('slogan', fontSize=9, alignment=1)), app.tr('date'), app.date.text()],
         [app.other_info.text(), '', '']
     ]
     
@@ -315,7 +308,7 @@ def add_summary_page(app, elements, styles):
     test_header_data = [
         [
             Paragraph(f"<b>Test ID:</b> {app.test_id.text()}", ParagraphStyle('test-id', fontSize=9, alignment=0)),
-            Paragraph("<b>Summary of EV Results</b>", ParagraphStyle('title', fontSize=14.5, alignment=1)),
+            Paragraph(f"<b>{app.tr('summary_results')}</b>", ParagraphStyle('title', fontSize=14.5, alignment=1)),
             Paragraph("<b> </b>", ParagraphStyle('space', fontSize=14.5, alignment=1)),
         ]
     ]
@@ -335,18 +328,17 @@ def add_summary_page(app, elements, styles):
 
     elements.append(test_header_table)
     elements.append(Spacer(1, 10))
-    elements.append(p(f"Static Plate Strain Modulus (D = {plate_diameter} mm) ~ DIN 18134:2012-04", ParagraphStyle('subtitle', fontSize=12, alignment=1)))
+    elements.append(p(f"{app.tr('static_plate_modulus')} (D = {plate_diameter} mm) ~ DIN 18134:2012-04", 
+                ParagraphStyle('subtitle', fontSize=12, alignment=1)))
     elements.append(Spacer(1, 24))
 
     # Check data
     if not app.summary_results:
-        print("Summary results are empty")
         return
 
     for result in app.summary_results:
         required_keys = ['station', 'side', 'material', 'ev1', 'ev2', 'ev2_ev1_ratio']
         if not all(k in result for k in required_keys):
-            print(f"Incomplete summary result: {result}")
             return
 
     header_style = ParagraphStyle(
@@ -356,10 +348,10 @@ def add_summary_page(app, elements, styles):
     )
     
     summary_headers = [
-        Paragraph("Test Point", header_style),
-        Paragraph("Station", header_style),
-        Paragraph("Side", header_style),
-        Paragraph("Type of Material", header_style),
+        Paragraph(app.tr('test_point'), header_style),
+        Paragraph(app.tr('station'), header_style),
+        Paragraph(app.tr('side'), header_style),
+        Paragraph(app.tr('material_type'), header_style),
         Paragraph("Ev<sub>1</sub> (MN/m²)", header_style),
         Paragraph("Ev<sub>2</sub> (MN/m²)", header_style),
         Paragraph("Ev<sub>2</sub>/Ev<sub>1</sub>", header_style),
@@ -435,15 +427,13 @@ def add_graph_pages(app, elements, styles):
         side = app.summary_results[test_number - 1]['side']
     
         # Centered title
-        elements.append(Paragraph(
-            f"Static Plate Strain Modulus (D = {plate_diameter} mm) ~ DIN 18134:2012-04", 
-            ParagraphStyle('title', fontSize=13.5, alignment=1)
-        ))
+        elements.append(p(f"{app.tr('static_plate_modulus')} (D = {plate_diameter} mm) ~ DIN 18134:2012-04", 
+                ParagraphStyle('title', fontSize=12, alignment=1)))
         
         elements.append(Spacer(1, 12))
         
         elements.append(Paragraph(
-            f"Test Point {test_number} | Station: {station} | Side: {side}", 
+            f"{app.tr('test_point')} {test_number} | {app.tr('station')}: {station} | {app.tr('side')}: {side}", 
             ParagraphStyle('centered_info', parent=styles['Normal'], alignment=1, fontSize=11)
         ))
     
@@ -451,12 +441,12 @@ def add_graph_pages(app, elements, styles):
     
         # Metadata Table
         metadata_table_data = [
-            ["Client:", app.client_name.text()],
-            ["Project:", app.project_name.text()],
-            ["The Contractor:", app.contractor_name.text()],
-            ["Type of Material:", app.material_type.text()],
-            ["Date:", app.date.text()],
-            ["Weather/Temperature:", app.weather_temp.text()],
+            [app.tr('client_name'), app.client_name.text()],
+            [app.tr('project_name'), app.project_name.text()],
+            [app.tr('contractor_name'), app.contractor_name.text()],
+            [app.tr('material_type'), app.material_type.text()],
+            [app.tr('date'), app.date.text()],
+            [app.tr('weather_temp'), app.weather_temp.text()],
         ]
         table = Table(metadata_table_data, colWidths=[3.5*cm, 13.5*cm])
         table.setStyle(TableStyle([
@@ -505,9 +495,9 @@ def add_graph_pages(app, elements, styles):
     
         # Header with name and unit split
         raw_headers = [
-            Paragraph("Load<br/><font size=7>(kN)</font>", header_style),
-            Paragraph("Stress<br/><font size=7>(MN/m²)</font>", header_style),
-            Paragraph("Settlement<br/><font size=7>(mm)</font>", header_style)
+            Paragraph(f"{app.tr('load_header')}<br/><font size=7>{app.tr('kN_unit')}</font>", header_style),
+            Paragraph(f"{app.tr('stress_header')}<br/><font size=7>{app.tr('MNm2_unit')}</font>", header_style),
+            Paragraph(f"{app.tr('settlement_header')}<br/><font size=7>{app.tr('mm_unit')}</font>", header_style)
         ]
     
         # Create the table with tighter columns

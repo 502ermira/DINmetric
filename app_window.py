@@ -12,16 +12,23 @@ from constants import CYCLE_TYPES
 from data_handler import evaluate_test_secant
 from data_handler import evaluate_test_curve_fit
 from pdf_exporter import export_to_pdf
+from translations import translations
 
 class PlateLoadTestApp(QWidget):
     def __init__(self):
         super().__init__()
+        self.current_language = "en" 
         self.setWindowTitle("DIN 18134 - Plate Load Test")
         self.setMinimumSize(900, 650)
         self.sidebar_expanded = False
         self.init_ui()
 
+    def tr(self, key):
+        """Translation helper method"""
+        return translations[self.current_language].get(key, key)
+
     def init_ui(self):
+        self.setWindowTitle(self.tr("app_title"))
         self.sidebar_widget = QWidget()
         self.sidebar_widget.setMinimumWidth(0)
         self.sidebar_widget.setMaximumWidth(0)
@@ -31,7 +38,7 @@ class PlateLoadTestApp(QWidget):
         self.toggle_button = QPushButton()
         self.toggle_button.setObjectName("sidebarToggle")
         self.toggle_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowRight))
-        self.toggle_button.setText(" Show Report Details")
+        self.toggle_button.setText(self.tr("show_report_details"))
         self.toggle_button.clicked.connect(self.toggle_sidebar)
         self.toggle_button.setCursor(Qt.PointingHandCursor)
         hint_width = self.toggle_button.sizeHint().width()
@@ -48,7 +55,7 @@ class PlateLoadTestApp(QWidget):
         
         # Company Logo Upload
         company_layout = QHBoxLayout()
-        self.company_logo_btn = QPushButton("Add Company Logo")
+        self.company_logo_btn = QPushButton(self.tr("add_company_logo"))
         self.company_logo_btn.setCursor(Qt.PointingHandCursor)
         self.company_logo_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
@@ -84,7 +91,7 @@ class PlateLoadTestApp(QWidget):
         
         # Accreditation Logo Upload
         accreditation_layout = QHBoxLayout()
-        self.accreditation_logo_btn = QPushButton("Add Accreditation Logo")
+        self.accreditation_logo_btn = QPushButton(self.tr("add_accreditation_logo"))
         self.accreditation_logo_btn.setCursor(Qt.PointingHandCursor)
         self.accreditation_logo_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
@@ -122,44 +129,55 @@ class PlateLoadTestApp(QWidget):
         
         self.company_logo_btn.clicked.connect(self.upload_company_logo)
         self.accreditation_logo_btn.clicked.connect(self.upload_accreditation_logo)
+
+        self.language_selector = QComboBox()
+        self.language_selector.addItem("English", "en")
+        self.language_selector.addItem("Shqip", "sq")
+        self.language_selector.currentIndexChanged.connect(self.change_language)
         
         logos_layout.addLayout(company_layout)
         logos_layout.addLayout(accreditation_layout)
         self.sidebar_layout.addLayout(logos_layout)
+        self.sidebar_layout.addWidget(QLabel(self.tr("language")))
+        self.sidebar_layout.addWidget(self.language_selector)
 
-
-        def make_row(*widgets):
+        def make_row(label_key, widget):
             row = QHBoxLayout()
-            for label_text, widget in widgets:
-                row.addWidget(QLabel(label_text))
-                row.addWidget(widget)
-            return row
+            label = QLabel(self.tr(label_key))
+            row.addWidget(label)
+            row.addWidget(widget)
+            return row, label
 
         # --- Sidebar Content ---
         sidebar_info = [
-            ("Test ID", QLineEdit()),
-            ("Company Name", QLineEdit()),
-            ("Slogan", QLineEdit()),
-            ("Code", QLineEdit()),
-            ("Version", QLineEdit()),
-            ("Date", QLineEdit()),
-            ("Other Info", QLineEdit()),
-            ("Client Name", QLineEdit()),
-            ("Project Name", QLineEdit()),
-            ("Contractor's Name", QLineEdit()),
-            ("Request Number", QLineEdit()),
-            ("Weather / Temperature", QLineEdit()),
-            ("Designed & Confirmed By", QLineEdit()),
-            ("Measurements Done By", QLineEdit()),
-            ("Supervisor", QLineEdit()),
-            ("Laboratory Technician", QLineEdit()),
-            ("Type of Material", QLineEdit())
+            ("test_id", QLineEdit()),
+            ("company_name", QLineEdit()),
+            ("slogan", QLineEdit()),
+            ("code", QLineEdit()),
+            ("version", QLineEdit()),
+            ("date", QLineEdit()),
+            ("other_info", QLineEdit()),
+            ("client_name", QLineEdit()),
+            ("project_name", QLineEdit()),
+            ("contractor_name", QLineEdit()),
+            ("request_number", QLineEdit()),
+            ("weather_temp", QLineEdit()),
+            ("designed_by", QLineEdit()),
+            ("measured_by", QLineEdit()),
+            ("supervisor", QLineEdit()),
+            ("laboratory", QLineEdit()),
+            ("material_type", QLineEdit())
         ]
 
-        for label, field in sidebar_info:
-            self.sidebar_layout.addLayout(make_row((label, field)))
+        self.sidebar_labels = []  # Add this as an instance variable
+        
+        # When creating rows:
+        for label_key, field in sidebar_info:
+            row_layout, label = make_row(label_key, field)
+            self.sidebar_layout.addLayout(row_layout)
+            self.sidebar_labels.append((label_key, label))  # Store key and label
 
-        (self.test_id ,self.company_name, self.company_slogan, self.code, self.version,
+        (self.test_id, self.company_name, self.company_slogan, self.code, self.version,
          self.date, self.other_info, self.client_name, self.project_name,
          self.contractor_name, self.request_number, self.weather_temp,
          self.designed_by, self.measured_by, self.supervisor, self.laboratory,
@@ -192,10 +210,17 @@ class PlateLoadTestApp(QWidget):
         form_layout.setLabelAlignment(Qt.AlignRight)
         form_layout.setHorizontalSpacing(23)
         
-        form_layout.addRow("Plate Diameter (mm)", self.plate_diameter)
-        form_layout.addRow("Measurement Device", self.measurement_device_selector)
+        self.plate_diameter_label = QLabel(self.tr("plate_diameter"))
+        self.measurement_device_label = QLabel(self.tr("measurement_device"))
+        self.method_selector_label = QLabel(self.tr("calculation_method"))
+        
+        form_layout.addRow(self.plate_diameter_label, self.plate_diameter)
+        form_layout.addRow(self.measurement_device_label, self.measurement_device_selector)
         form_layout.addRow(self.lever_ratio_label, self.lever_ratio)
-        form_layout.addRow("Calculation Method", self.method_selector)
+        form_layout.addRow(self.method_selector_label, self.method_selector)
+        
+        # Store the form layout as an instance variable
+        self.form_layout = form_layout
 
         scale_factor = self.devicePixelRatioF()
         label_width = int(60 * scale_factor)
@@ -227,19 +252,19 @@ class PlateLoadTestApp(QWidget):
         # --- Action Buttons ---
         action_buttons_layout = QHBoxLayout()
         self.add_row_btn = QPushButton("Add Row")
-        clear_btn = QPushButton("Clear")
-        calc_btn = QPushButton("Evaluate")
-        export_btn = QPushButton("Export to PDF")
+        self.clear_btn = QPushButton("Clear")
+        self.calc_btn = QPushButton("Evaluate")
+        self.export_btn = QPushButton("Export to PDF")
 
         action_buttons_layout.addWidget(self.add_row_btn)
-        action_buttons_layout.addWidget(clear_btn)
-        action_buttons_layout.addWidget(calc_btn)
-        action_buttons_layout.addWidget(export_btn)
+        action_buttons_layout.addWidget(self.clear_btn)
+        action_buttons_layout.addWidget(self.calc_btn)
+        action_buttons_layout.addWidget(self.export_btn)
 
         self.add_row_btn.clicked.connect(self.add_row)
-        clear_btn.clicked.connect(self.clear_fields)
-        calc_btn.clicked.connect(self.run_selected_method)
-        export_btn.clicked.connect(lambda: export_to_pdf(self))
+        self.clear_btn.clicked.connect(self.clear_fields)
+        self.calc_btn.clicked.connect(self.run_selected_method)
+        self.export_btn.clicked.connect(lambda: export_to_pdf(self))
 
         self.graphs_stack = QStackedWidget()
         self.graph_container = QWidget()
@@ -275,7 +300,8 @@ class PlateLoadTestApp(QWidget):
         center_split = QHBoxLayout()
 
         left_panel = QVBoxLayout()
-        left_panel.addWidget(QLabel("Enter Load-Settlement Data:"))
+        self.data_label = QLabel(self.tr("enter_data"))
+        left_panel.addWidget(self.data_label)
         left_panel.addWidget(self.table)
         left_panel.addLayout(action_buttons_layout)
 
@@ -302,17 +328,18 @@ class PlateLoadTestApp(QWidget):
         full_layout.addWidget(main_content_widget, stretch=1)
 
         self.setLayout(full_layout)
+        self.update_ui_language()
 
     def toggle_sidebar(self):
         if self.sidebar_expanded:
             self.sidebar_widget.setMaximumWidth(0)
             self.toggle_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowLeft))
-            self.toggle_button.setText(" Show Report Details")
+            self.toggle_button.setText(self.tr("show_report_details"))
             self.sidebar_expanded = False
         else:
             self.sidebar_widget.setMaximumWidth(self.width() // 5)
             self.toggle_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowRight))
-            self.toggle_button.setText(" Hide Report Details")
+            self.toggle_button.setText(self.tr("hide_report_details"))
             self.sidebar_expanded = True
 
     def setup_table_rows(self, num_rows):
@@ -322,7 +349,9 @@ class PlateLoadTestApp(QWidget):
     def setup_row(self, row):
         combo = QComboBox()
         combo.addItem("")
-        combo.addItems(CYCLE_TYPES)
+        combo.addItem(self.tr("First Loading"), "First Loading")
+        combo.addItem(self.tr("Unloading"), "Unloading")
+        combo.addItem(self.tr("Second Loading"), "Second Loading")
         self.table.setCellWidget(row, 2, combo)
 
         self.table.setCellWidget(row, 3, QLineEdit())
@@ -403,10 +432,10 @@ class PlateLoadTestApp(QWidget):
            widget.deleteLater()
    
     def run_selected_method(self):
-        method = self.method_selector.currentText()
-        if method == "DIN 18134 official method (2nd-degree curve fit)":
+        method_index = self.method_selector.currentIndex()
+        if method_index == 0:
             evaluate_test_curve_fit(self)
-        elif method == "Practical Secant Approximation":
+        elif method_index == 1:
             evaluate_test_secant(self)
 
     def show_prev_graph(self):
@@ -420,39 +449,38 @@ class PlateLoadTestApp(QWidget):
             self.graphs_stack.setCurrentIndex(index + 1)
 
     def upload_company_logo(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Add Company Logo", "", "Image Files (*.png *.jpg *.jpeg *.bmp)")
+        file_path, _ = QFileDialog.getOpenFileName(self, self.tr("add_company_logo"), "", "Image Files (*.png *.jpg *.jpeg *.bmp)")
         if file_path:
             self.company_logo_path = file_path
             pixmap = QPixmap(file_path).scaled(self.company_logo_preview.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.company_logo_preview.setPixmap(pixmap)
             self.company_logo_container.show() 
             self.company_logo_remove_btn.show()
-            self.company_logo_btn.setText("Change Company Logo")
+            self.company_logo_btn.setText(self.tr("change_company_logo"))
 
     def upload_accreditation_logo(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Add Accreditation Logo", "", "Image Files (*.png *.jpg *.jpeg *.bmp)")
+        file_path, _ = QFileDialog.getOpenFileName(self, self.tr("add_accreditation_logo"), "", "Image Files (*.png *.jpg *.jpeg *.bmp)")
         if file_path:
             self.accreditation_logo_path = file_path
             pixmap = QPixmap(file_path).scaled(self.accreditation_logo_preview.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.accreditation_logo_preview.setPixmap(pixmap)
             self.accreditation_logo_container.show() 
             self.accreditation_logo_remove_btn.show()
-            self.accreditation_logo_btn.setText("Change Accreditation Logo")
+            self.accreditation_logo_btn.setText(self.tr("add_accreditation_logo"))
 
     def remove_company_logo(self):
         self.company_logo_path = None
         self.company_logo_preview.clear()
         self.company_logo_container.hide()
         self.company_logo_remove_btn.hide()
-        self.company_logo_btn.setText("Add Company Logo")
-    
+        self.company_logo_btn.setText(self.tr("add_company_logo"))
 
     def remove_accreditation_logo(self):
         self.accreditation_logo_path = None
         self.accreditation_logo_preview.clear()
         self.accreditation_logo_container.hide()
         self.accreditation_logo_remove_btn.hide()
-        self.accreditation_logo_btn.setText("Add Accreditation Logo")
+        self.accreditation_logo_btn.setText(self.tr("add_accreditation_logo"))
 
     def toggle_lever_ratio_field(self):
         if self.measurement_device_selector.currentText() == "Lever-Arm System":
@@ -462,3 +490,121 @@ class PlateLoadTestApp(QWidget):
             self.lever_ratio_label.setVisible(False)
             self.lever_ratio.setVisible(False)
             self.lever_ratio.setText("1.000")
+
+    def update_ui_language(self):
+        """Update all UI elements with the current language"""
+        # Update toggle button
+        if self.sidebar_expanded:
+            self.toggle_button.setText(self.tr("hide_report_details"))
+            self.toggle_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowRight))
+        else:
+            self.toggle_button.setText(self.tr("show_report_details"))
+            self.toggle_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowLeft))
+        
+        # Update logos buttons
+        if hasattr(self, 'company_logo_path'):
+            self.company_logo_btn.setText(self.tr("change_company_logo"))
+        else:
+            self.company_logo_btn.setText(self.tr("add_company_logo"))
+            
+        if hasattr(self, 'accreditation_logo_path'):
+            self.accreditation_logo_btn.setText(self.tr("change_accreditation_logo"))
+        else:
+            self.accreditation_logo_btn.setText(self.tr("add_accreditation_logo"))
+        
+        # Update form labels - we need to get the label widgets from the form layout
+        for i in range(self.form_layout.rowCount()):
+            label_item = self.form_layout.itemAt(i, QFormLayout.LabelRole)
+            if label_item:
+                label_widget = label_item.widget()
+                if label_widget:
+                    if i == 0:  # Plate Diameter label
+                        label_widget.setText(self.tr("plate_diameter"))
+                    elif i == 1:  # Measurement Device label
+                        label_widget.setText(self.tr("measurement_device"))
+                    elif i == 2:  # Lever Ratio label
+                        self.lever_ratio_label.setText(self.tr("lever_ratio"))
+                    elif i == 3:  # Calculation Method label
+                        label_widget.setText(self.tr("calculation_method"))
+        
+        # Update table headers
+        self.table.setHorizontalHeaderLabels([
+            self.tr("load"), self.tr("settlement"), self.tr("cycle_type"),
+            self.tr("station"), self.tr("side"), ""
+        ])
+        
+        # Update action buttons
+        self.add_row_btn.setText(self.tr("add_row"))
+        self.clear_btn.setText(self.tr("clear"))
+        self.calc_btn.setText(self.tr("evaluate"))
+        self.export_btn.setText(self.tr("export_pdf"))
+        
+        # Update navigation buttons
+        self.prev_btn.setText(self.tr("previous"))
+        self.next_btn.setText(self.tr("next"))
+        
+        # Update other labels - you'll need to create self.data_label in init_ui()
+        if hasattr(self, 'data_label'):
+            self.data_label.setText(self.tr("enter_data"))
+        
+        # Update combo boxes - we don't setText but update items
+        current_measurement_device = self.measurement_device_selector.currentText()
+        self.measurement_device_selector.clear()
+        self.measurement_device_selector.addItems([
+            self.tr("direct_measurement"),
+            self.tr("lever_arm_system")
+        ])
+        # Try to restore selection
+        for i in range(self.measurement_device_selector.count()):
+            if self.measurement_device_selector.itemText(i) == current_measurement_device:
+                self.measurement_device_selector.setCurrentIndex(i)
+                break
+        
+        current_method = self.method_selector.currentText()
+        self.method_selector.clear()
+        self.method_selector.addItems([
+            self.tr("din_method"),
+            self.tr("secant_method")
+        ])
+        # Try to restore selection
+        for i in range(self.method_selector.count()):
+            if self.method_selector.itemText(i) == current_method:
+                self.method_selector.setCurrentIndex(i)
+                break
+
+        # Update sidebar labels
+        for label_key, label in self.sidebar_labels:
+            label.setText(self.tr(label_key))
+
+        # Update cycle types in table
+        for row in range(self.table.rowCount()):
+            combo = self.table.cellWidget(row, 2)
+            if combo:
+                current_text = combo.currentText()
+                combo.clear()
+                combo.addItem("")  # Add empty item
+                # Add translated cycle types
+                for cycle in CYCLE_TYPES:
+                    combo.addItem(self.tr(cycle))
+                
+                # Try to restore the previous selection
+                for i in range(combo.count()):
+                    if combo.itemText(i) == current_text:
+                        combo.setCurrentIndex(i)
+                        break
+        
+        # Update delete button tooltips
+        for row in range(self.table.rowCount()):
+            delete_btn = self.table.cellWidget(row, 5)
+            if delete_btn:
+                delete_btn.setToolTip(self.tr("delete_row_tooltip"))
+
+    def set_language(self, language_code):
+        """Change the application language"""
+        if language_code in translations:
+            self.current_language = language_code
+            self.update_ui_language()
+
+    def change_language(self, index):
+        language_code = self.language_selector.itemData(index)
+        self.set_language(language_code)

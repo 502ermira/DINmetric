@@ -34,23 +34,40 @@ def evaluate_test_secant(app, external_grouped_data=None):
                     cycle_combo = app.table.cellWidget(row, 2)
                     station_widget = app.table.cellWidget(row, 3)
                     side_widget = app.table.cellWidget(row, 4)
-    
+            
                     if not all([load_item, settl_item, cycle_combo, station_widget, side_widget]):
                         continue
-    
-                    load = float(load_item.text())
-                    settlement = float(settl_item.text()) * lever
-                    cycle_type = cycle_combo.currentText().strip()
+            
+                    load = float(load_item.text().strip())
+                    settlement = float(settl_item.text().strip()) * lever
                     station = station_widget.text().strip()
                     side = side_widget.text().strip()
-    
-                    if cycle_type not in CYCLE_TYPES:
+                    
+                    # GET CYCLE TYPE - BULLETPROOF VERSION
+                    # Replace the cycle_type detection with this:
+                    cycle_text = cycle_combo.currentText()
+                    cycle_type = None
+                    
+                    # Map all possible versions to the English keys
+                    if cycle_text in ["First Loading", "Ngarkim"]:
+                        cycle_type = "First Loading"
+                    elif cycle_text in ["Unloading", "Shkarkim"]:
+                        cycle_type = "Unloading"
+                    elif cycle_text in ["Second Loading", "Ringarkim"]:
+                        cycle_type = "Second Loading"
+                    
+                    if not cycle_type:
                         continue
-    
+            
                     key = (station, side)
                     grouped_data[key][cycle_type]['loads'].append(load)
                     grouped_data[key][cycle_type]['settlements'].append(settlement)
-                except Exception:
+                    
+                    # DEBUG PRINT
+                    print(f"Row {row+1}: Cycle={cycle_type}, Load={load}, Settlement={settlement}")
+                    
+                except Exception as e:
+                    print(f"Error in row {row+1}: {str(e)}")
                     continue
             
         if not grouped_data:
@@ -231,7 +248,7 @@ def evaluate_test_secant(app, external_grouped_data=None):
             ev_table.setObjectName("evResultsTable")
             ev_table.setColumnCount(8)
             ev_table.setHorizontalHeaderLabels([
-                " Cycle ", " σ₃ (MN/m²) ", " σ₁ (MN/m²) ", " σ₂ (MN/m²) ", " s₁ (mm) ", " s₂ (mm) ", " Ev (MN/m²) ", " Ev₂/Ev₁ "
+                app.tr(" Cycle "), " σ₃ (MN/m²) ", " σ₁ (MN/m²) ", " σ₂ (MN/m²) ", " s₁ (mm) ", " s₂ (mm) ", " Ev (MN/m²) ", " Ev₂/Ev₁ "
             ])
 
             ev_table.verticalHeader().setVisible(False)
@@ -324,23 +341,40 @@ def evaluate_test_curve_fit(app):
                 cycle_combo = app.table.cellWidget(row, 2)
                 station_widget = app.table.cellWidget(row, 3)
                 side_widget = app.table.cellWidget(row, 4)
-
+        
                 if not all([load_item, settl_item, cycle_combo, station_widget, side_widget]):
                     continue
-
+        
                 load = float(load_item.text().strip())
                 settlement = float(settl_item.text().strip()) * lever
                 station = station_widget.text().strip()
                 side = side_widget.text().strip()
-                cycle_type = cycle_combo.currentText().strip()
-
-                if cycle_type not in CYCLE_TYPES:
+                
+                # GET CYCLE TYPE - BULLETPROOF VERSION
+                # Replace the cycle_type detection with this:
+                cycle_text = cycle_combo.currentText()
+                cycle_type = None
+                
+                # Map all possible versions to the English keys
+                if cycle_text in ["First Loading", "Ngarkim"]:
+                    cycle_type = "First Loading"
+                elif cycle_text in ["Unloading", "Shkarkim"]:
+                    cycle_type = "Unloading"
+                elif cycle_text in ["Second Loading", "Ringarkim"]:
+                    cycle_type = "Second Loading"
+                
+                if not cycle_type:
                     continue
-
+        
                 key = (station, side)
                 grouped_data[key][cycle_type]['loads'].append(load)
                 grouped_data[key][cycle_type]['settlements'].append(settlement)
-            except Exception:
+                
+                # DEBUG PRINT
+                print(f"Row {row+1}: Cycle={cycle_type}, Load={load}, Settlement={settlement}")
+                
+            except Exception as e:
+                print(f"Error in row {row+1}: {str(e)}")
                 continue
 
         if not grouped_data:
@@ -536,7 +570,7 @@ def evaluate_test_curve_fit(app):
             ev_table.setObjectName("evResultsTable")
             ev_table.setColumnCount(7)
             ev_table.setHorizontalHeaderLabels([
-                " Cycle ", " σ₃ (MN/m²) ", " a₀ ", " a₁ ", " a₂ ", " Ev (MN/m²) ", " Ev₂ / Ev₁ "
+                app.tr(" Cycle "), " σ₃ (MN/m²) ", " a₀ ", " a₁ ", " a₂ ", " Ev (MN/m²) ", " Ev₂ / Ev₁ "
             ])
             ev_table.verticalHeader().setVisible(False)
             ev_table.verticalHeader().setDefaultSectionSize(0)
