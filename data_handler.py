@@ -14,6 +14,7 @@ from sklearn.metrics import r2_score
 
 def evaluate_test_secant(app, external_grouped_data=None):
     try:
+        print(f"Running as fallback: {external_grouped_data is not None}")
         r = float(app.plate_diameter.currentText()) / 2  # radius in mm
         d = r * 2
         lever = float(app.lever_ratio.text())
@@ -24,39 +25,36 @@ def evaluate_test_secant(app, external_grouped_data=None):
         grouped_data = external_grouped_data if external_grouped_data else defaultdict(lambda: {cycle: {'loads': [], 'settlements': []} for cycle in CYCLE_TYPES})
         
         if not external_grouped_data:
-            # Only clear results if this is a primary secant call (not fallback)
             app.summary_results = []
-
-        for row in range(app.table.rowCount()):
-            try:
-                load_item = app.table.item(row, 0)
-                settl_item = app.table.item(row, 1)
-                cycle_combo = app.table.cellWidget(row, 2)
-                station_widget = app.table.cellWidget(row, 3)
-                side_widget = app.table.cellWidget(row, 4)
-
-                if not all([load_item, settl_item, cycle_combo, station_widget, side_widget]):
+            
+            for row in range(app.table.rowCount()):
+                try:
+                    load_item = app.table.item(row, 0)
+                    settl_item = app.table.item(row, 1)
+                    cycle_combo = app.table.cellWidget(row, 2)
+                    station_widget = app.table.cellWidget(row, 3)
+                    side_widget = app.table.cellWidget(row, 4)
+    
+                    if not all([load_item, settl_item, cycle_combo, station_widget, side_widget]):
+                        continue
+    
+                    load = float(load_item.text())
+                    settlement = float(settl_item.text()) * lever
+                    cycle_type = cycle_combo.currentText().strip()
+                    station = station_widget.text().strip()
+                    side = side_widget.text().strip()
+    
+                    if cycle_type not in CYCLE_TYPES:
+                        continue
+    
+                    key = (station, side)
+                    grouped_data[key][cycle_type]['loads'].append(load)
+                    grouped_data[key][cycle_type]['settlements'].append(settlement)
+                except Exception:
                     continue
-
-                load = float(load_item.text())
-                settlement = float(settl_item.text()) * lever
-                cycle_type = cycle_combo.currentText().strip()
-                station = station_widget.text().strip()
-                side = side_widget.text().strip()
-
-                if cycle_type not in CYCLE_TYPES:
-                    continue
-
-                key = (station, side)
-                grouped_data[key][cycle_type]['loads'].append(load)
-                grouped_data[key][cycle_type]['settlements'].append(settlement)
-            except Exception:
-                continue
-
+            
         if not grouped_data:
             raise ValueError("No valid data found")
-        
-        start_index = app.graphs_stack.count()
 
         if not external_grouped_data:
             # Only clear graphs if this is a primary secant call (not fallback)
@@ -108,7 +106,6 @@ def evaluate_test_secant(app, external_grouped_data=None):
             first_cycle_sigma_max = None
 
             for cycle in CYCLE_TYPES:
-
                 for l, s in zip(data_cycles[cycle]['loads'], data_cycles[cycle]['settlements']):
                     group_raw_points.append((l, s, cycle))
 
@@ -620,10 +617,6 @@ def evaluate_test_curve_fit(app):
             # Clear summary_results before fallback
             app.summary_results = []
             
-            # Process fallback with secant
-            evaluate_test_secant(app, external_grouped_data=failed_groups)
-            
-            # Merge results without duplication
             # Process fallback and receive fallback widgets
             fallback_widgets = evaluate_test_secant(app, external_grouped_data=failed_groups)
             
