@@ -168,7 +168,7 @@ def export_to_pdf(app):
     # --- Calculation Method Section ---
     calc_method = app.method_selector.currentText()
     
-    if "curve" in calc_method.lower():
+    if "din" in calc_method.lower():
         calc_text = app.tr("curve_method_description")
     else:
         calc_text = app.tr("secant_method_description")
@@ -184,7 +184,6 @@ def export_to_pdf(app):
     calc_table.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        # Optional: small internal padding for text
         ('LEFTPADDING', (0, 0), (-1, -1), 2),
         ('RIGHTPADDING', (0, 0), (-1, -1), 2),
     ]))
@@ -360,7 +359,7 @@ def add_summary_page(app, elements, styles):
     total_width = 17 * cm  
 
     # Proportional weights (these should sum up to 1)
-    weights = [0.13, 0.16, 0.16, 0.16, 0.13, 0.13, 0.13]
+    weights = [0.14, 0.16, 0.15, 0.16, 0.13, 0.13, 0.13]
     
     colWidths = [w * total_width for w in weights]
 

@@ -14,7 +14,6 @@ from sklearn.metrics import r2_score
 
 def evaluate_test_secant(app, external_grouped_data=None):
     try:
-        print(f"Running as fallback: {external_grouped_data is not None}")
         r = float(app.plate_diameter.currentText()) / 2  # radius in mm
         d = r * 2
         lever = float(app.lever_ratio.text())
@@ -122,17 +121,22 @@ def evaluate_test_secant(app, external_grouped_data=None):
                 settlements = settlements[sort_idx]
 
                 ax.plot(stress, settlements, marker=cycle_markers[cycle], linestyle='None',
-                        label=app.tr(cycle), color=colors[cycle], markersize=marker_size, linewidth=line_width)
+                        label=f"{app.tr(cycle)} {app.tr('points')}", color=colors[cycle], markersize=marker_size, linewidth=line_width)
 
-                # Use actual data only, i.e., skip preload from fit if desired
+                # Use actual data only, skip preload from fit
                 fit_stress = stress[1:] if cycle == "first_loading" and len(stress) > 2 else stress
                 fit_settlements = settlements[1:] if cycle == "first_loading" and len(settlements) > 2 else settlements
 
                 if cycle == "first_loading":
-                    # Mark the actual first point (optional)
-                    ax.plot(stress[0], settlements[0], marker='o', color='gray', markersize=marker_size, linewidth=line_width)
-                    ax.annotate('Preload', xy=(stress[0], settlements[0]), xytext=(5, 5),
-                                textcoords='offset points', fontsize=6.5, color='gray')
+                    ax.plot(
+                        stress[0], 
+                        settlements[0], 
+                        marker='x', 
+                        color='gray', 
+                        label=app.tr("preload_point"),
+                        markersize=marker_size, 
+                        linewidth=line_width,
+                    )
 
                 if len(fit_stress) >= 3:
                     coeffs = np.polyfit(fit_stress, fit_settlements, 2)
@@ -170,7 +174,7 @@ def evaluate_test_secant(app, external_grouped_data=None):
                         's2': s2
                     })
 
-                    ax.plot([sigma1, sigma2], [s1, s2], 'k-', label=app.tr(cycle), markersize=marker_size, linewidth=line_width)
+                    ax.plot([sigma1, sigma2], [s1, s2], 'k-', label='_nolegend_', markersize=marker_size, linewidth=line_width)
                     
                     # Vertical reference lines and labels at σ₁, σ₂, σ₃=σ_max
                     for val, label in zip(
@@ -344,11 +348,7 @@ def evaluate_test_curve_fit(app):
                 grouped_data[key][cycle_type]['loads'].append(load)
                 grouped_data[key][cycle_type]['settlements'].append(settlement)
                 
-                # DEBUG PRINT
-                print(f"Row {row+1}: Cycle={cycle_type}, Load={load}, Settlement={settlement}")
-                
             except Exception as e:
-                print(f"Error in row {row+1}: {str(e)}")
                 continue
 
         if not grouped_data:
@@ -418,11 +418,11 @@ def evaluate_test_curve_fit(app):
 
                 if cycle == "first_loading":
                     ax.plot(stress[1:], settlements[1:], marker=cycle_markers[cycle],
-                            linestyle='None', label=app.tr(cycle), color=cycle_colors[cycle], markersize=marker_size, linewidth=line_width_curve)
-                    ax.plot(stress[0], settlements[0], 'x', color='gray', label="Preload point", markersize=marker_size, linewidth=line_width_curve)
+                            linestyle='None', label=f"{app.tr(cycle)} {app.tr('points')}", color=cycle_colors[cycle], markersize=marker_size, linewidth=line_width_curve)
+                    ax.plot(stress[0], settlements[0], 'x', color='gray', label=app.tr("preload_point"), markersize=marker_size, linewidth=line_width_curve)
                 else:
                     ax.plot(stress, settlements, marker=cycle_markers[cycle],
-                            linestyle='None', label=app.tr(cycle), color=cycle_colors[cycle], markersize=marker_size, linewidth=line_width_curve)
+                            linestyle='None', label=f"{app.tr(cycle)} {app.tr('points')}", color=cycle_colors[cycle], markersize=marker_size, linewidth=line_width_curve)
 
                 if cycle == "first_loading" and len(stress) > 2:
                     fit_stress = stress[1:]
@@ -444,12 +444,11 @@ def evaluate_test_curve_fit(app):
                 
                 # Check R² threshold (0.95)
                 r2 = r2_score(fit_settl, fit_pred)
-                print(f"R² for {cycle}: {r2:.3f}")
                 if r2 < 0.95:
                     print(f"⚠️ Fallback to secant: Bad fit quality (R²={r2:.3f}) — deferring to secant method")
                     failed_groups[(station, side)] = data_cycles
                     fit_successful = False
-                    break  # Exit the current cycle loop
+                    break
 
                 sigma_range = np.linspace(np.min(stress), np.max(stress), 200)
                 fit_curve = a0 + a1 * sigma_range + a2 * sigma_range ** 2
@@ -646,7 +645,6 @@ def evaluate_test_curve_fit(app):
             app.graphs_stack.setCurrentIndex(0)
 
     except Exception as e:
-        print("!!! ERROR:", str(e))
         QMessageBox.critical(app, "Evaluation Error", str(e))
 
 

@@ -168,13 +168,12 @@ class PlateLoadTestApp(QWidget):
             ("material_type", QLineEdit())
         ]
 
-        self.sidebar_labels = []  # Add this as an instance variable
+        self.sidebar_labels = []
         
-        # When creating rows:
         for label_key, field in sidebar_info:
             row_layout, label = make_row(label_key, field)
             self.sidebar_layout.addLayout(row_layout)
-            self.sidebar_labels.append((label_key, label))  # Store key and label
+            self.sidebar_labels.append((label_key, label))
 
         (self.test_id, self.company_name, self.company_slogan, self.code, self.version,
          self.date, self.other_info, self.client_name, self.project_name,

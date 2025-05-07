@@ -1,6 +1,7 @@
 translations = {
     "en": {
         "app_title": "DINmetric 18134:2012-04",
+        "test_id": "Test ID",
         "show_report_details": "Show Report Details",
         "hide_report_details": "Hide Report Details",
         "add_company_logo": "Add Company Logo",
@@ -72,10 +73,13 @@ translations = {
         "load_settlement_curve_secant": "{station} - {side} | Load-Settlement Curve (Secant Method)",
         "normal_stress": "Normal Stress σ (MN/m²)",
         "load_settlement_curve_fit": "{station} - {side} | Load-Settlement Curve (Curve Fit Method)",
-        "fit": "Fit"
+        "fit": "Fit",
+        "points": "points",
+        "preload_point": "Preload point"
     },
     "sq": {
         "app_title": "DINmetric 18134:2012-04",
+        "test_id": "Test ID",
         "show_report_details": "Shfaq Detajet e Raportit",
         "hide_report_details": "Fshih Detajet e Raportit",
         "add_company_logo": "Shto Logon e Kompanisë",
@@ -124,7 +128,7 @@ translations = {
         "second_loading": "Ngarkimi i dytë",
         " Cycle ": " Cikli ",
         "test_report": "Raport Testi",
-        "test_point": "Pika e Testimit",
+        "test_point": "Pika e Testit",
         "load_header": "Ngarkesa",
         "stress_header": "Stresi",
         "settlement_header": "Vendosja",
@@ -146,6 +150,8 @@ translations = {
         "load_settlement_curve_secant": "{station} - {side} | Kurba e Ngarkimit-Vendosjes (Metoda Sekante)",
         "normal_stress": "Stresi Normal σ (MN/m²)",
         "load_settlement_curve_fit": "{station} - {side} | Kurba e Ngarkimit-Vendosjes (Metoda Curve-Fit)",
-        "fit": "Fit"
+        "fit": "Fit",
+        "points": " - pikat",
+        "preload_point": "Pika e parë"
     }
 }
