@@ -529,7 +529,7 @@ def add_graph_pages(app, elements, styles):
                     linewidth=orig_line.get_linewidth() * 1.5,
                     label=orig_line.get_label() if orig_line.get_label() != '_nolegend_' else None
                 )
-            elif len(set(ydata)) == 1:  # Horizontal line
+            elif len(set(ydata)) == 1:
                 y = ydata[0]
                 new_ax.axhline(
                     y=y,
@@ -539,7 +539,6 @@ def add_graph_pages(app, elements, styles):
                     label=orig_line.get_label() if orig_line.get_label() != '_nolegend_' else None
                 )
             else:
-                # Regular line
                 new_ax.plot(
                     xdata,
                     ydata,

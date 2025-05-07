@@ -141,7 +141,7 @@ def evaluate_test_secant(app, external_grouped_data=None):
                     sigma_max = np.max(fit_stress)
                     sigma_range = np.linspace(0, 1.2 * sigma_max, 200)
                     settlement_fit = poly_curve(sigma_range)
-                    ax.plot(sigma_range, settlement_fit, linestyle='--', color=colors[cycle], label=app.tr(cycle), markersize=marker_size, linewidth=line_width)
+                    ax.plot(sigma_range, settlement_fit, linestyle='--', color=colors[cycle], label=f"{app.tr(cycle)} {app.tr('fit')}", markersize=marker_size, linewidth=line_width)
 
                 if cycle in ("first_loading", "second_loading"):
                     sigma_max = np.max(stress)
@@ -451,10 +451,9 @@ def evaluate_test_curve_fit(app):
                     fit_successful = False
                     break  # Exit the current cycle loop
 
-
                 sigma_range = np.linspace(np.min(stress), np.max(stress), 200)
                 fit_curve = a0 + a1 * sigma_range + a2 * sigma_range ** 2
-                ax.plot(sigma_range, fit_curve, '-', color=cycle_colors[cycle], label=app.tr(cycle), linewidth=line_width_curve)
+                ax.plot(sigma_range, fit_curve, '-', color=cycle_colors[cycle], label=f"{app.tr(cycle)} {app.tr('fit')}", linewidth=line_width_curve)
 
                 # Ev calculation only for Loading cycles
                 if cycle in ("first_loading", "second_loading"):
