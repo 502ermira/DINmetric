@@ -34,6 +34,24 @@ class PlateLoadTestApp(QWidget):
         self.sidebar_widget.setMaximumWidth(0)
         self.sidebar_layout = QVBoxLayout()
         self.sidebar_widget.setLayout(self.sidebar_layout)
+        self.language_selector = QComboBox()
+        self.language_selector.addItem("English", "en")
+        self.language_selector.addItem("Shqip", "sq")
+        self.language_selector.currentIndexChanged.connect(self.change_language)
+        self.language_selector.setObjectName("languageComboBox")
+        
+        language_row = QHBoxLayout()
+        language_row.setContentsMargins(0, 2, 0, 2)
+        language_row.setSpacing(4)
+        
+        language_label = QLabel(self.tr("language"))
+        language_label.setObjectName("languageLabel")
+        language_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        
+        language_row.addWidget(language_label)
+        language_row.addWidget(self.language_selector, stretch=1)
+        
+        self.sidebar_layout.addLayout(language_row)
 
         self.toggle_button = QPushButton()
         self.toggle_button.setObjectName("sidebarToggle")
@@ -128,17 +146,10 @@ class PlateLoadTestApp(QWidget):
         
         self.company_logo_btn.clicked.connect(self.upload_company_logo)
         self.accreditation_logo_btn.clicked.connect(self.upload_accreditation_logo)
-
-        self.language_selector = QComboBox()
-        self.language_selector.addItem("English", "en")
-        self.language_selector.addItem("Shqip", "sq")
-        self.language_selector.currentIndexChanged.connect(self.change_language)
         
         logos_layout.addLayout(company_layout)
         logos_layout.addLayout(accreditation_layout)
         self.sidebar_layout.addLayout(logos_layout)
-        self.sidebar_layout.addWidget(QLabel(self.tr("language")))
-        self.sidebar_layout.addWidget(self.language_selector)
 
         def make_row(label_key, widget):
             row = QHBoxLayout()
@@ -498,6 +509,16 @@ class PlateLoadTestApp(QWidget):
         else:
             self.toggle_button.setText(self.tr("show_report_details"))
             self.toggle_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowLeft))
+
+
+        for i in range(self.sidebar_layout.count()):
+            item = self.sidebar_layout.itemAt(i)
+            if isinstance(item, QHBoxLayout):
+                for j in range(item.count()):
+                    widget = item.itemAt(j).widget()
+                    if isinstance(widget, QLabel) and widget.text() in ["Language: ", "Gjuha: "]:
+                        widget.setText(self.tr("language"))
+                        break
         
         # Update logos buttons
         if hasattr(self, 'company_logo_path') and self.company_logo_path is not None:

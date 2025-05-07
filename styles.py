@@ -146,5 +146,18 @@ QPushButton#removeLogoButton:hover {
     background-color: #e53935;
 }
 
+/* Language Selector Compact Style */
+#languageLabel {
+    padding: 0;
+    margin: 0;
+    font-size: 12px;
+}
+
+#languageComboBox {
+    min-height: 22px;
+    max-height: 22px;
+    padding: 0 4px;
+    margin: 0;
+}
 
 """
