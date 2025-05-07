@@ -17,6 +17,7 @@ from PIL import Image as PILImage
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.rl_config import defaultEncoding
+from constants import CYCLE_TYPE_IDS
 
 pdfmetrics.registerFont(TTFont("DejaVuSans", "fonts/DejaVuSans.ttf"))
 
@@ -247,8 +248,6 @@ def export_to_pdf(app):
                 1 * cm, 
                 f"{page_num}"
         )
-
-    
         canvas_obj.restoreState()
     
     doc.build(
@@ -462,28 +461,24 @@ def add_graph_pages(app, elements, styles):
         area = np.pi * (float(plate_diameter) / 1000) ** 2 / 4
         raw_data = []
     
-        grouped_data = {
-            "First Loading": [],
-            "Unloading": [],
-            "Second Loading": []
-        }
+        grouped_data = {cycle: [] for cycle in CYCLE_TYPE_IDS}
     
         for load, settlement, cycle in group_raw_points:
             if cycle in grouped_data:
                 grouped_data[cycle].append((load, settlement))
     
-        for key in ["First Loading", "Unloading", "Second Loading"]:
-            for load, settlement in grouped_data[key]:
+        for cycle in CYCLE_TYPE_IDS:
+            for load, settlement in grouped_data[cycle]:
                 stress = load / area / 1000
                 raw_data.append([
                     f"{load:.2f}",
                     f"{stress:.3f}",
                     f"{settlement:.2f}"
                 ])
-            if key != "Second Loading":
-                raw_data.append(["", "", ""]) 
+            
+            if cycle != "second_loading":
                 raw_data.append(["", "", ""])
-    
+            
         header_style = ParagraphStyle(
             'header_style',
             fontSize=8,

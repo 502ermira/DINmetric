@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5.QtGui import QPixmap, QIcon
 
-from constants import CYCLE_TYPES
+from constants import CYCLE_TYPES, CYCLE_TYPE_IDS
 from data_handler import evaluate_test_secant
 from data_handler import evaluate_test_curve_fit
 from pdf_exporter import export_to_pdf
@@ -348,18 +348,18 @@ class PlateLoadTestApp(QWidget):
 
     def setup_row(self, row):
         combo = QComboBox()
-        combo.addItem("")
-        combo.addItem(self.tr("First Loading"), "First Loading")
-        combo.addItem(self.tr("Unloading"), "Unloading")
-        combo.addItem(self.tr("Second Loading"), "Second Loading")
+        combo.addItem("", "")
+        for cycle_id in CYCLE_TYPE_IDS:
+            label = self.tr(cycle_id)
+            combo.addItem(label, cycle_id)
         self.table.setCellWidget(row, 2, combo)
-
+    
         self.table.setCellWidget(row, 3, QLineEdit())
         self.table.setCellWidget(row, 4, QLineEdit())
-
+    
         delete_btn = QPushButton()
         delete_btn.setIcon(self.style().standardIcon(QStyle.SP_TrashIcon))
-        delete_btn.setToolTip("Delete row")
+        delete_btn.setToolTip(self.tr("delete_row_tooltip"))
         delete_btn.clicked.connect(lambda _, r=row: self.confirm_delete_row(r))
         self.table.setCellWidget(row, 5, delete_btn)
 
@@ -580,18 +580,14 @@ class PlateLoadTestApp(QWidget):
         for row in range(self.table.rowCount()):
             combo = self.table.cellWidget(row, 2)
             if combo:
-                current_text = combo.currentText()
+                current_data = combo.currentData()
                 combo.clear()
-                combo.addItem("")  # Add empty item
-                # Add translated cycle types
-                for cycle in CYCLE_TYPES:
-                    combo.addItem(self.tr(cycle))
-                
-                # Try to restore the previous selection
-                for i in range(combo.count()):
-                    if combo.itemText(i) == current_text:
-                        combo.setCurrentIndex(i)
-                        break
+                combo.addItem("", "")
+                for cycle_id in CYCLE_TYPE_IDS:
+                    combo.addItem(self.tr(cycle_id), cycle_id)
+                index = combo.findData(current_data)
+                if index != -1:
+                    combo.setCurrentIndex(index)
         
         # Update delete button tooltips
         for row in range(self.table.rowCount()):
