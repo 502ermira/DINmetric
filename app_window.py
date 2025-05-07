@@ -17,8 +17,8 @@ from translations import translations
 class PlateLoadTestApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.current_language = "en" 
-        self.setWindowTitle("DIN 18134 - Plate Load Test")
+        self.current_language = "sq" 
+        self.setWindowTitle(self.tr("app_title"))
         self.setMinimumSize(900, 650)
         self.sidebar_expanded = False
         self.init_ui()
@@ -28,15 +28,14 @@ class PlateLoadTestApp(QWidget):
         return translations[self.current_language].get(key, key)
 
     def init_ui(self):
-        self.setWindowTitle(self.tr("app_title"))
         self.sidebar_widget = QWidget()
         self.sidebar_widget.setMinimumWidth(0)
         self.sidebar_widget.setMaximumWidth(0)
         self.sidebar_layout = QVBoxLayout()
         self.sidebar_widget.setLayout(self.sidebar_layout)
         self.language_selector = QComboBox()
-        self.language_selector.addItem("English", "en")
         self.language_selector.addItem("Shqip", "sq")
+        self.language_selector.addItem("English", "en")
         self.language_selector.currentIndexChanged.connect(self.change_language)
         self.language_selector.setObjectName("languageComboBox")
         
@@ -245,7 +244,7 @@ class PlateLoadTestApp(QWidget):
         top_form_layout.setContentsMargins(0, 0, 0, 19)
 
         # --- Table: Load-Settlement Data ---
-        self.table = QTableWidget(14, 6)
+        self.table = QTableWidget(16, 6)
         self.table.setHorizontalHeaderLabels([
             "Load (kN)", "Settlement (mm)", "Cycle Type",
             "Station", "Side", ""
@@ -255,20 +254,20 @@ class PlateLoadTestApp(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
-        for row in range(14):
+        for row in range(16):
             self.setup_row(row)
 
         # --- Action Buttons ---
         action_buttons_layout = QHBoxLayout()
         self.add_row_btn = QPushButton("Add Row")
-        self.clear_btn = QPushButton("Clear")
         self.calc_btn = QPushButton("Evaluate")
         self.export_btn = QPushButton("Export to PDF")
+        self.clear_btn = QPushButton("Clear")
 
         action_buttons_layout.addWidget(self.add_row_btn)
-        action_buttons_layout.addWidget(self.clear_btn)
         action_buttons_layout.addWidget(self.calc_btn)
         action_buttons_layout.addWidget(self.export_btn)
+        action_buttons_layout.addWidget(self.clear_btn)
 
         self.add_row_btn.clicked.connect(self.add_row)
         self.clear_btn.clicked.connect(self.clear_fields)
@@ -411,8 +410,8 @@ class PlateLoadTestApp(QWidget):
        self.toggle_lever_ratio_field()
    
        # Clear table contents
-       self.table.setRowCount(14)
-       for row in range(14):
+       self.table.setRowCount(16)
+       for row in range(16):
            for col in range(self.table.columnCount()):
                item = self.table.item(row, col)
                if item:
@@ -492,7 +491,8 @@ class PlateLoadTestApp(QWidget):
         self.accreditation_logo_btn.setText(self.tr("add_accreditation_logo"))
 
     def toggle_lever_ratio_field(self):
-        if self.measurement_device_selector.currentText() == "Lever-Arm System":
+        lever_arm_text = self.tr("lever_arm_system")
+        if self.measurement_device_selector.currentText() == lever_arm_text:
             self.lever_ratio_label.setVisible(True)
             self.lever_ratio.setVisible(True)
         else:
@@ -516,7 +516,7 @@ class PlateLoadTestApp(QWidget):
             if isinstance(item, QHBoxLayout):
                 for j in range(item.count()):
                     widget = item.itemAt(j).widget()
-                    if isinstance(widget, QLabel) and widget.text() in ["Language: ", "Gjuha: "]:
+                    if isinstance(widget, QLabel) and widget.text() in ["Gjuha: ", "Language: "]:
                         widget.setText(self.tr("language"))
                         break
         

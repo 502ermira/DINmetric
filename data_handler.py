@@ -148,10 +148,12 @@ def evaluate_test_secant(app, external_grouped_data=None):
                     ax.plot(sigma_range, settlement_fit, linestyle='--', color=colors[cycle], label=f"{app.tr(cycle)} {app.tr('fit')}", markersize=marker_size, linewidth=line_width)
 
                 if cycle in ("first_loading", "second_loading"):
-                    sigma_max = np.max(stress)
                     if cycle == "first_loading":
+                        sigma_max = np.max(stress)
                         first_cycle_sigma_max = sigma_max
                     else:
+                        if first_cycle_sigma_max is None:
+                            continue
                         sigma_max = first_cycle_sigma_max
 
                     sigma1 = 0.3 * sigma_max

@@ -11,19 +11,19 @@ translations = {
         "language":"Language: ",
         "company_name": "Company Name",
         "slogan": "Slogan",
-        "code": "Code",
-        "version": "Version",
-        "date": "Date",
+        "code": "Code:",
+        "version": "Version:",
+        "date": "Date:",
         "other_info": "Other Info",
         "client_name": "Client Name",
         "project_name": "Project Name",
-        "contractor_name": "Contractor's Name",
+        "contractor_name": "Contractor's Name: ",
         "request_number": "Request Number",
         "weather_temp": "Weather / Temperature",
         "designed_by": "Designed & Confirmed by:",
-        "measured_by": "Measurements Done By",
-        "supervisor": "Supervisor",
-        "laboratory": "Laboratory Technician",
+        "measured_by": "Measurements Done By:",
+        "supervisor": "Supervisor: ",
+        "laboratory": "Laboratory Technician: ",
         "material_type": "Type of Material",
         "plate_diameter": "Plate Diameter (mm)",
         "measurement_device": "Measurement Device",
@@ -76,7 +76,8 @@ translations = {
         "load_settlement_curve_fit": "{station} - {side} | Load-Settlement Curve (Curve Fit Method)",
         "fit": "Fit",
         "points": "points",
-        "preload_point": "Preload point"
+        "preload_point": "Preload point",
+        "continued": "Continued - Part"
     },
     "sq": {
         "app_title": "DINmetric 18134:2012-04",
@@ -99,19 +100,19 @@ translations = {
         "contractor_name": "Punëkryesi: ",
         "request_number": "Numri i Kërkesës",
         "weather_temp": "Moti / Temperatura",
-        "designed_by": "Hartoi dhe vërtetoi: ",
+        "designed_by": "Hartoi dhe vërtetoi:",
         "measured_by": "Matjet i kreu: ",
         "supervisor": "Organi mbikqyrës: ",
         "laboratory": "Laborati: ",
         "material_type": "Lloji i Materialit",
         "plate_diameter": "Diametri i Pllakës (mm)",
-        "measurement_device": "Pajisja e Matjes",
+        "measurement_device": "Pajisja Matëse",
         "lever_ratio": "Raporti i Levës (hp/hm)",
         "calculation_method": "Metoda e Llogaritjes",
         "direct_measurement": "Pajisje Matëse Direkte",
-        "lever_arm_system": "Sistem Krahu i Levës",
-        "din_method": "Metoda zyrtare DIN 18134 (përshtatje kurbë e shkallës së dytë)",
-        "secant_method": "Përafrimi Praktik Sekant",
+        "lever_arm_system": "Sistemi i krahut të Levës",
+        "din_method": "Metoda zyrtare DIN 18134 (përshtatje me kurbë të shkallës së dytë)",
+        "secant_method": "Përafrimi praktik i Sekantës",
         "load": "Ngarkesa (kN)",
         "settlement": "Vendosja (mm)",
         "cycle_type": "Lloji i Ciklit",
@@ -139,21 +140,22 @@ translations = {
         "mm_unit": "(mm)",
         "summary_results": "Përmbledhja e rezultateve",
         "note": "*Vërejtje: Rezultatet vlejnë për pikat e matura.",
-        "footer_compliance": "Raporti i testimit gjeneruar në përputhje me DIN 18134:2012-04 | Software: DINmetric v1.0",
+        "footer_compliance": "Raporti i testit gjeneruar në përputhje me DIN 18134:2012-04 | Software: DINmetric v1.0",
         "static_plate_modulus": "Moduli i Ngjeshjes me Pllakë statike",
                 "curve_method_description": (
             "DINmetric llogarit modulin e deformimit (Ev) duke përdorur metodën e përshtatjes së kurbës sipas DIN 18134:2012-04. "
-            "Nëse të dhënat nuk mbështesin një përshtatje të besueshme, softueri automatikisht përdor metodën sekante. "
+            "Nëse të dhënat nuk mbështesin një përshtatje të besueshme, softueri automatikisht përdor metodën e Sekantës. "
             "Si rezultat, parametra të ndryshëm mund të shfaqen në tabelën e rezultateve, në varësi të metodës së aplikuar për çdo pikë testimi."
         ),
         "secant_method_description": (
-            "Moduli i deformimit (Ev) është llogaritur duke përdorur metodën sekante"
+            "Moduli i deformimit (Ev) është llogaritur duke përdorur metodën e Sekantës."
         ),
         "load_settlement_curve_secant": "{station} - {side} | Kurba e Ngarkimit-Vendosjes (Metoda Sekante)",
         "normal_stress": "Stresi Normal σ (MN/m²)",
-        "load_settlement_curve_fit": "{station} - {side} | Kurba e Ngarkimit-Vendosjes (Metoda Curve-Fit)",
+        "load_settlement_curve_fit": "{station} - {side} | Kurba e Ngarkimit-Vendosjes (Metoda e përshtatjes së kurbës)",
         "fit": "Fit",
         "points": " - pikat",
-        "preload_point": "Pika e parë"
+        "preload_point": "Pika e parë",
+        "continued": "Vazhdim - Pjesa"
     }
 }

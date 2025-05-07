@@ -240,7 +240,7 @@ def export_to_pdf(app):
         canvas_obj.setFillColor(colors.grey)
         canvas_obj.drawCentredString(doc_obj.pagesize[0] / 2.0, (1.85 * cm) - line_spacing, app.tr('footer_compliance'))
         if page_num > 1:
-            canvas_obj.setFont("Helvetica", 7.5)
+            canvas_obj.setFont("Helvetica", 8)
             canvas_obj.setFillColor(colors.black)
             canvas_obj.drawCentredString(
                 doc_obj.pagesize[0] / 2.0,
@@ -374,17 +374,40 @@ def add_summary_page(app, elements, styles):
             f"{result['ev2_ev1_ratio']:.2f}" if result['ev2_ev1_ratio'] else "-"
         ])
 
-    table = Table([summary_headers] + summary_data, repeatRows=1, hAlign='CENTER', colWidths=colWidths)
-    table.setStyle(TableStyle([
-        ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-        ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('FONTNAME', (0,0), (-1,-1), 'DejaVuSans'),
-        ('FONTSIZE', (0,0), (-1,-1), 8.5),
-    ]))
-
-    elements.append(table)
-    elements.append(PageBreak())
+    # Split summary_data into chunks of 24 rows
+    chunk_size = 2
+    total_pages = (len(summary_data) + chunk_size - 1) // chunk_size
+    
+    for page_num, i in enumerate(range(0, len(summary_data), chunk_size)):
+        chunk = summary_data[i:i + chunk_size]
+        
+        # Add continuation header for pages after the first
+        if page_num > 0:
+            elements.append(Paragraph(
+                f"<b>{app.tr('summary_results')} ({app.tr('continued')} {page_num + 1}/{total_pages})</b>",
+                ParagraphStyle('continuation-title', fontSize=14.5, alignment=1)
+            ))
+            elements.append(Spacer(1, 24))
+        
+        # Create the table
+        table = Table([summary_headers] + chunk, 
+                     repeatRows=1, 
+                     hAlign='CENTER', 
+                     colWidths=colWidths)
+        
+        table.setStyle(TableStyle([
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+            ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('FONTNAME', (0,0), (-1,-1), 'DejaVuSans'),
+            ('FONTSIZE', (0,0), (-1,-1), 8.5),
+        ]))
+        
+        elements.append(table)
+        elements.append(PageBreak())
+        
+        if not chunk:
+            elements.pop()
 
 
 def add_graph_pages(app, elements, styles):
