@@ -52,10 +52,12 @@ class PlateLoadTestApp(QWidget):
 
         # --- Logos ---
         logos_layout = QVBoxLayout()
+        self.company_logo_path = None
+        self.accreditation_logo_path = None
         
         # Company Logo Upload
         company_layout = QHBoxLayout()
-        self.company_logo_btn = QPushButton(self.tr("add_company_logo"))
+        self.company_logo_btn = QPushButton()
         self.company_logo_btn.setCursor(Qt.PointingHandCursor)
         self.company_logo_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
@@ -91,7 +93,7 @@ class PlateLoadTestApp(QWidget):
         
         # Accreditation Logo Upload
         accreditation_layout = QHBoxLayout()
-        self.accreditation_logo_btn = QPushButton(self.tr("add_accreditation_logo"))
+        self.accreditation_logo_btn = QPushButton()
         self.accreditation_logo_btn.setCursor(Qt.PointingHandCursor)
         self.accreditation_logo_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         
@@ -123,9 +125,6 @@ class PlateLoadTestApp(QWidget):
         accreditation_layout.addWidget(self.accreditation_logo_btn)
         accreditation_layout.addWidget(self.accreditation_logo_container)
         accreditation_layout.setAlignment(Qt.AlignLeft)
-        
-        self.company_logo_path = None
-        self.accreditation_logo_path = None
         
         self.company_logo_btn.clicked.connect(self.upload_company_logo)
         self.accreditation_logo_btn.clicked.connect(self.upload_accreditation_logo)
@@ -502,12 +501,12 @@ class PlateLoadTestApp(QWidget):
             self.toggle_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowLeft))
         
         # Update logos buttons
-        if hasattr(self, 'company_logo_path'):
+        if hasattr(self, 'company_logo_path') and self.company_logo_path is not None:
             self.company_logo_btn.setText(self.tr("change_company_logo"))
         else:
             self.company_logo_btn.setText(self.tr("add_company_logo"))
             
-        if hasattr(self, 'accreditation_logo_path'):
+        if hasattr(self, 'accreditation_logo_path') and self.accreditation_logo_path is not None:
             self.accreditation_logo_btn.setText(self.tr("change_accreditation_logo"))
         else:
             self.accreditation_logo_btn.setText(self.tr("add_accreditation_logo"))
