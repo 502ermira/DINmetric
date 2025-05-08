@@ -1,0 +1,46 @@
+DINmetric - OFFICIAL SOFTWARE LICENSE  
+Version 1.0 (2025)  
+
+CREATOR & COPYRIGHT HOLDER:  
+Ermira Haziri  
+Contact: ermirahaz@gmail.com  
+
+GRANT OF LICENSE:  
+You receive a non-transferable, non-exclusive license to:  
+✔ Install and use one (1) copy on up to five (5) business or personal devices 
+✔ Make backup copies for internal use only
+✔ Use the software for commercial, professional, or business purposes
+This license grants usage rights only. It does not transfer ownership or resale rights.
+The software remains the sole property of the creator.
+
+RESTRICTIONS:  
+You may NOT:  
+✖ Share, distribute, sublicense, or resell this software  
+✖ Reverse-engineer, decompile, or modify the software in any way
+✖ Remove or alter any license, branding, or copyright information
+
+INTELLECTUAL PROPERTY:  
+All rights (including patents, copyrights, and trade secrets)  
+remain the exclusive property of Ermira Haziri.  
+
+COMMERCIAL USE:  
+This license includes permission for commercial use by the purchasing client.
+For bulk, multi-user, or enterprise licensing, contact: ermirahaz@gmail.com  
+
+TERMINATION:  
+Automatically void if terms are violated. Destroy all copies upon termination.  
+
+WARRANTY DISCLAIMER:  
+Provided "AS IS" without warranties. Creator not liable for damages,  
+data loss, or consequential claims.  
+
+SUPPORT & UPDATES
+This license does not include guaranteed technical support or future updates.
+Support may be provided at the discretion of the creator.
+
+EXPORT CONTROL:  
+Subject to all applicable international and national export laws and regulations.
+
+COPYRIGHT:  
+© 2025 Ermira Haziri. All rights reserved.  
+Unauthorized use prohibited under penalty of law.  

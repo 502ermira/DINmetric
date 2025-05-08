@@ -145,7 +145,7 @@ def evaluate_test_secant(app, external_grouped_data=None):
                     sigma_max = np.max(fit_stress)
                     sigma_range = np.linspace(0, 1.2 * sigma_max, 200)
                     settlement_fit = poly_curve(sigma_range)
-                    ax.plot(sigma_range, settlement_fit, linestyle='--', color=colors[cycle], label=f"{app.tr(cycle)} {app.tr('fit')}", markersize=marker_size, linewidth=line_width)
+                    ax.plot(sigma_range, settlement_fit, linestyle='-', color=colors[cycle], label=f"{app.tr(cycle)} {app.tr('fit')}", markersize=marker_size, linewidth=line_width)
 
                 if cycle in ("first_loading", "second_loading"):
                     if cycle == "first_loading":

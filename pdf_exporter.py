@@ -18,9 +18,10 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.rl_config import defaultEncoding
 from constants import CYCLE_TYPE_IDS
+from utils import resource_path
 
-pdfmetrics.registerFont(TTFont("DejaVuSans", "fonts/DejaVuSans.ttf"))
-
+font_path = resource_path("fonts/DejaVuSans.ttf")
+pdfmetrics.registerFont(TTFont("DejaVuSans", font_path))
 
 def export_to_pdf(app):
     if app.graphs_stack.count() == 0:
@@ -225,7 +226,7 @@ def export_to_pdf(app):
         
             canvas_obj.setFont("Helvetica", 10)
             canvas_obj.drawRightString(designer_x, footer_y + line_spacing * 3, app.tr("measured_by"))
-            canvas_obj.drawRightString(designer_x, footer_y + line_spacing, "_______________________")
+            canvas_obj.drawRightString(designer_x, footer_y + line_spacing, "______________________")
             canvas_obj.drawRightString(designer_x, footer_y, app.measured_by.text())
 
         elif page_num >= 3:
@@ -238,7 +239,7 @@ def export_to_pdf(app):
         # Common centered footer note
         canvas_obj.setFont("Helvetica-Oblique", 7)
         canvas_obj.setFillColor(colors.grey)
-        canvas_obj.drawCentredString(doc_obj.pagesize[0] / 2.0, (1.85 * cm) - line_spacing, app.tr('footer_compliance'))
+        canvas_obj.drawCentredString(doc_obj.pagesize[0] / 2.0, (1.86 * cm) - line_spacing, app.tr('footer_compliance'))
         if page_num > 1:
             canvas_obj.setFont("Helvetica", 8)
             canvas_obj.setFillColor(colors.black)
@@ -375,7 +376,7 @@ def add_summary_page(app, elements, styles):
         ])
 
     # Split summary_data into chunks of 24 rows
-    chunk_size = 2
+    chunk_size = 24
     total_pages = (len(summary_data) + chunk_size - 1) // chunk_size
     
     for page_num, i in enumerate(range(0, len(summary_data), chunk_size)):

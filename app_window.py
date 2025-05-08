@@ -18,6 +18,7 @@ class PlateLoadTestApp(QWidget):
     def __init__(self):
         super().__init__()
         self.current_language = "sq" 
+        self.setWindowFlags(Qt.Window)
         self.setWindowTitle(self.tr("app_title"))
         self.setMinimumSize(900, 650)
         self.sidebar_expanded = False
@@ -491,7 +492,7 @@ class PlateLoadTestApp(QWidget):
         self.accreditation_logo_btn.setText(self.tr("add_accreditation_logo"))
 
     def toggle_lever_ratio_field(self):
-        lever_arm_text = self.tr("lever_arm_system")
+        lever_arm_text = self.tr("lever_arm_system") 
         if self.measurement_device_selector.currentText() == lever_arm_text:
             self.lever_ratio_label.setVisible(True)
             self.lever_ratio.setVisible(True)

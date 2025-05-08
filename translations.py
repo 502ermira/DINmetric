@@ -150,11 +150,11 @@ translations = {
         "secant_method_description": (
             "Moduli i deformimit (Ev) është llogaritur duke përdorur metodën e Sekantës."
         ),
-        "load_settlement_curve_secant": "{station} - {side} | Kurba e Ngarkimit-Vendosjes (Metoda Sekante)",
+        "load_settlement_curve_secant": "{station} - {side} | Kurba e Ngarkimit-Vendosjes (Metoda e Sekantës)",
         "normal_stress": "Stresi Normal σ (MN/m²)",
         "load_settlement_curve_fit": "{station} - {side} | Kurba e Ngarkimit-Vendosjes (Metoda e përshtatjes së kurbës)",
-        "fit": "Fit",
-        "points": " - pikat",
+        "fit": "- kurba",
+        "points": "- pikat",
         "preload_point": "Pika e parë",
         "continued": "Vazhdim - Pjesa"
     }
