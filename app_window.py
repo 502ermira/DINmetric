@@ -60,9 +60,9 @@ class PlateLoadTestApp(QWidget):
         self.toggle_button.clicked.connect(self.toggle_sidebar)
         self.toggle_button.setCursor(Qt.PointingHandCursor)
         hint_width = self.toggle_button.sizeHint().width()
-        self.toggle_button.setFixedWidth(hint_width + 12)
+        self.toggle_button.setFixedWidth(hint_width + 20)
         scale_factor = self.devicePixelRatioF()
-        self.toggle_button.setFixedWidth(int((hint_width + 12) * scale_factor))
+        self.toggle_button.setFixedWidth(int((hint_width + 20) * scale_factor))
 
         # --- Top form: Meta Information ---
         top_form_layout = QVBoxLayout()
@@ -250,10 +250,9 @@ class PlateLoadTestApp(QWidget):
             "Load (kN)", "Settlement (mm)", "Cycle Type",
             "Station", "Side", ""
         ])
+
         for col in range(6):
             self.table.horizontalHeader().setSectionResizeMode(col, QHeaderView.Stretch)
-        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
         for row in range(16):
             self.setup_row(row)
@@ -341,15 +340,28 @@ class PlateLoadTestApp(QWidget):
 
     def toggle_sidebar(self):
         if self.sidebar_expanded:
-            self.sidebar_widget.setMaximumWidth(0)
+            self.sidebar_widget.setFixedWidth(0)
             self.toggle_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowLeft))
             self.toggle_button.setText(self.tr("show_report_details"))
             self.sidebar_expanded = False
         else:
-            self.sidebar_widget.setMaximumWidth(self.width() // 5)
+            self.update_sidebar_width()
             self.toggle_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowRight))
             self.toggle_button.setText(self.tr("hide_report_details"))
             self.sidebar_expanded = True
+
+    def update_sidebar_width(self):
+        """Calculate and set appropriate sidebar width based on current window size"""
+        base_width = self.width() // 5
+        extra_pixels = 6
+        max_sidebar_width = 500
+        calculated_width = min(base_width + extra_pixels, max_sidebar_width)
+        self.sidebar_widget.setFixedWidth(calculated_width)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if self.sidebar_expanded:
+            self.update_sidebar_width()
 
     def setup_table_rows(self, num_rows):
         for row in range(num_rows):

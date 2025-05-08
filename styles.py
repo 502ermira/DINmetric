@@ -136,7 +136,7 @@ QTableWidget#evResultsTable::item {
 }
 
 QPushButton#removeLogoButton {
-     background-color: #FF5C5C;
+    background-color: #FF5C5C;
     border: none;
     border-radius: 8px;
     padding: 0;

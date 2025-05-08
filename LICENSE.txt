@@ -19,6 +19,9 @@ You may NOT:
 ✖ Reverse-engineer, decompile, or modify the software in any way
 ✖ Remove or alter any license, branding, or copyright information
 
+System Requirements:
+- Windows 10 or 11 (64-bit)
+
 INTELLECTUAL PROPERTY:  
 All rights (including patents, copyrights, and trade secrets)  
 remain the exclusive property of Ermira Haziri.  
