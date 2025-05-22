@@ -8,6 +8,7 @@ from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
 from reportlab.pdfgen import canvas
 from functools import partial
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from reportlab.lib.utils import ImageReader
 import matplotlib.pyplot as plt
 import tempfile
 from datetime import datetime
@@ -46,22 +47,42 @@ def export_to_pdf(app):
 
     def p(text, style=normal):
         return Paragraph(text, style)
-
-    # Top logos (Company and Accreditation)
-    logo_row = []
+    
+    total_width = 17 * cm
+    desired_height = 2 * cm
+    
+    # Load logos
+    company_logo = None
+    accreditation_logo = None
+    
     if app.company_logo_path and os.path.exists(app.company_logo_path):
-        logo_row.append(Image(app.company_logo_path, width=3*cm, height=2*cm))
+        company_reader = ImageReader(app.company_logo_path)
+        w, h = company_reader.getSize()
+        scale = desired_height / h
+        company_logo = Image(app.company_logo_path, width=w * scale, height=desired_height)
     else:
-        logo_row.append(Spacer(3*cm, 2*cm))
-
-    logo_row.append(Spacer(10*cm, 2*cm))
-
+        company_logo = Spacer(4*cm, desired_height)
+    
     if app.accreditation_logo_path and os.path.exists(app.accreditation_logo_path):
-        logo_row.append(Image(app.accreditation_logo_path, width=3*cm, height=2*cm))
+        accred_reader = ImageReader(app.accreditation_logo_path)
+        w, h = accred_reader.getSize()
+        scale = desired_height / h
+        accreditation_logo = Image(app.accreditation_logo_path, width=w * scale, height=desired_height)
     else:
-        logo_row.append(Spacer(3*cm, 2*cm))
-
-    elements.append(Table([logo_row], colWidths=[3*cm, None, 3*cm]))
+        accreditation_logo = Spacer(4*cm, desired_height)
+    
+    # Create logo row using a 3-column table layout with calculated spacers
+    logo_table = Table(
+        [[company_logo, Spacer(1, desired_height), accreditation_logo]],
+        colWidths=[total_width * 0.2, total_width * 0.6, total_width * 0.2]
+    )
+    logo_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
+        ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+    ]))
+    
+    elements.append(logo_table)
     elements.append(Spacer(1, 12))
     
     # --- Metadata Section ---
@@ -265,7 +286,15 @@ def add_summary_page(app, elements, styles):
     
     # Add company logo if the path exists
     if app.company_logo_path and os.path.exists(app.company_logo_path):
-        logo_row.append(Image(app.company_logo_path, width=3*cm, height=2*cm))
+        image_reader = ImageReader(app.company_logo_path)
+        original_width, original_height = image_reader.getSize()
+        
+        desired_height = 2 * cm
+        scale_factor = desired_height / float(original_height)
+        adjusted_width = original_width * scale_factor
+        
+        logo = Image(app.company_logo_path, width=adjusted_width, height=desired_height)
+        logo_row.append(logo)
     else:
         logo_row.append(Spacer(3*cm, 2*cm))
     
@@ -424,7 +453,15 @@ def add_graph_pages(app, elements, styles):
         logo_row = []
         
         if app.company_logo_path and os.path.exists(app.company_logo_path):
-            logo_row.append(Image(app.company_logo_path, width=3*cm, height=2*cm))
+            image_reader = ImageReader(app.company_logo_path)
+            original_width, original_height = image_reader.getSize()
+            
+            desired_height = 2 * cm
+            scale_factor = desired_height / float(original_height)
+            adjusted_width = original_width * scale_factor
+            
+            logo = Image(app.company_logo_path, width=adjusted_width, height=desired_height)
+            logo_row.append(logo)
         else:
             logo_row.append(Spacer(3*cm, 2*cm))
         

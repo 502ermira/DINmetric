@@ -17,7 +17,7 @@ translations = {
         "other_info": "Other Info",
         "client_name": "Client Name",
         "project_name": "Project Name",
-        "contractor_name": "Contractor's Name: ",
+        "contractor_name": "Contractor: ",
         "request_number": "Request Number",
         "weather_temp": "Weather / Temperature",
         "designed_by": "Designed & Confirmed by:",
