@@ -14,6 +14,10 @@ from data_handler import evaluate_test_curve_fit
 from pdf_exporter import export_to_pdf
 from translations import translations
 
+class NoScrollComboBox(QComboBox):
+    def wheelEvent(self, event):
+        event.ignore()
+
 class PlateLoadTestApp(QWidget):
     def __init__(self):
         super().__init__()
@@ -34,7 +38,7 @@ class PlateLoadTestApp(QWidget):
         self.sidebar_widget.setMaximumWidth(0)
         self.sidebar_layout = QVBoxLayout()
         self.sidebar_widget.setLayout(self.sidebar_layout)
-        self.language_selector = QComboBox()
+        self.language_selector = NoScrollComboBox()
         self.language_selector.addItem("Shqip", "sq")
         self.language_selector.addItem("English", "en")
         self.language_selector.currentIndexChanged.connect(self.change_language)
@@ -193,10 +197,10 @@ class PlateLoadTestApp(QWidget):
          self.material_type) = [field for _, field in sidebar_info]
 
         # --- Always Visible Fields ---
-        self.plate_diameter = QComboBox()
+        self.plate_diameter = NoScrollComboBox()
         self.plate_diameter.addItems(["300", "600", "762"])
         
-        self.measurement_device_selector = QComboBox()
+        self.measurement_device_selector = NoScrollComboBox()
         self.measurement_device_selector.addItems([
             "Direct Measurement Device",
             "Lever-Arm System"
@@ -206,7 +210,7 @@ class PlateLoadTestApp(QWidget):
         self.lever_ratio_label = QLabel("Lever Ratio (hp/hm)")
         self.lever_ratio = QLineEdit("1.000")
         
-        self.method_selector = QComboBox()
+        self.method_selector = NoScrollComboBox()
         self.method_selector.addItems([
             "DIN 18134 official method (2nd-degree curve fit)",
             "Practical Secant Approximation"
@@ -368,7 +372,7 @@ class PlateLoadTestApp(QWidget):
             self.setup_row(row)
 
     def setup_row(self, row):
-        combo = QComboBox()
+        combo = NoScrollComboBox()
         combo.addItem("", "")
         for cycle_id in CYCLE_TYPE_IDS:
             label = self.tr(cycle_id)
