@@ -3,10 +3,11 @@ from PyQt5.QtWidgets import (
     QPushButton, QComboBox, QTableWidget, QTableWidgetItem, QFileDialog, QSizePolicy,
     QHeaderView, QMessageBox, QScrollArea, QStackedWidget, QStyle, QFormLayout
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSettings, QTimer
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5.QtGui import QPixmap, QIcon
+import os
 
 from constants import CYCLE_TYPES, CYCLE_TYPE_IDS
 from data_handler import evaluate_test_secant
@@ -24,9 +25,16 @@ class PlateLoadTestApp(QWidget):
         self.current_language = "sq" 
         self.setWindowFlags(Qt.Window)
         self.setWindowTitle(self.tr("app_title"))
+        self.settings = QSettings("DINmetric", "DINmetric")
         self.setMinimumSize(900, 650)
         self.sidebar_expanded = False
+        self.showMaximized()
         self.init_ui()
+        self.clear_button_clicks = 0
+        self.clear_button_timer = QTimer(self)
+        self.clear_button_timer.setSingleShot(True)
+        self.clear_button_timer.timeout.connect(self._reset_click_counter)
+        self.load_settings()
 
     def tr(self, key):
         """Translation helper method"""
@@ -394,20 +402,29 @@ class PlateLoadTestApp(QWidget):
         self.setup_row(row_position)
 
     def confirm_delete_row(self, row):
-        reply = QMessageBox.question(
-            self, "Confirm Delete", f"Delete row {row + 1}?",
-            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
-        )
-        if reply == QMessageBox.Yes:
+        """Shows translated confirmation with translated buttons"""
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(self.tr("delete_row_title"))
+        msg_box.setText(self.tr("delete_row_confirm").format(row=row + 1))
+        msg_box.setIcon(QMessageBox.Question)
+        
+        yes_btn = msg_box.addButton(self.tr("yes_button"), QMessageBox.YesRole)
+        no_btn = msg_box.addButton(self.tr("no_button"), QMessageBox.NoRole)
+        msg_box.setDefaultButton(no_btn)
+        
+        msg_box.exec_()
+        
+        if msg_box.clickedButton() == yes_btn:
             self.table.removeRow(row)
             for i in range(self.table.rowCount()):
                 delete_btn = QPushButton()
                 delete_btn.setIcon(self.style().standardIcon(QStyle.SP_TrashIcon))
+                delete_btn.setToolTip(self.tr("delete_row_tooltip"))
                 delete_btn.clicked.connect(lambda _, r=i: self.confirm_delete_row(r))
-            self.table.setCellWidget(i, 5, delete_btn)
+                self.table.setCellWidget(i, 5, delete_btn)
 
-    def clear_fields(self):
-       # Clear text fields
+    def _clear_form_data(self):
+       """Clears only form/table data (original clear behavior)."""
        fields = [
            self.test_id, self.company_name, self.company_slogan, self.code, self.version,
            self.date, self.other_info, self.client_name, self.project_name,
@@ -455,7 +472,62 @@ class PlateLoadTestApp(QWidget):
            widget = self.graphs_stack.widget(0)
            self.graphs_stack.removeWidget(widget)
            widget.deleteLater()
-   
+
+    def clear_fields(self):
+        self.clear_button_clicks += 1
+        
+        if self.clear_button_clicks == 1:
+            self._clear_form_data()
+            self.clear_button_timer.start(800)
+        elif self.clear_button_clicks >= 2:
+            self._reset_click_counter()
+            self._confirm_settings_reset()
+
+    def _reset_click_counter(self):
+        """Resets the double-click detection."""
+        self.clear_button_clicks = 0
+    
+    def _confirm_settings_reset(self):
+        """Clears all data EXCEPT language preference"""
+        current_lang = self.settings.value("language", "sq")
+        
+        warning_dlg = QMessageBox(self)
+        warning_dlg.setWindowTitle(self.tr("reset_title"))
+        warning_dlg.setText(self.tr("reset_message"))
+        warning_dlg.setIcon(QMessageBox.Warning)
+        
+        warning_dlg.setStyleSheet("""
+            QLabel {
+                min-width: 350px;
+                font-size: 14px;
+            }
+            QPushButton {
+                min-width: 100px;
+                padding: 8px;
+            }
+        """)
+        
+        clear_btn = warning_dlg.addButton(self.tr("reset_button"), QMessageBox.ActionRole)        
+        keep_btn = warning_dlg.addButton(self.tr("cancel_button"), QMessageBox.RejectRole)
+        warning_dlg.setDefaultButton(keep_btn)
+        
+        warning_dlg.exec_()
+        
+        if warning_dlg.clickedButton() == clear_btn:
+            # Clear settings but preserve language
+            self.settings.clear()
+            self.settings.setValue("language", current_lang)
+            self.current_language = current_lang
+            self.load_settings()
+            
+            # Show success confirmation
+            success_dlg = QMessageBox()
+            success_dlg.setWindowTitle(self.tr("reset_complete_title"))
+            success_dlg.setText(self.tr("reset_complete_msg"))
+            success_dlg.setIcon(QMessageBox.Information)
+            success_dlg.setStandardButtons(QMessageBox.Ok)
+            success_dlg.exec_()
+
     def run_selected_method(self):
         method_index = self.method_selector.currentIndex()
         if method_index == 0:
@@ -477,6 +549,7 @@ class PlateLoadTestApp(QWidget):
         file_path, _ = QFileDialog.getOpenFileName(self, self.tr("add_company_logo"), "", "Image Files (*.png *.jpg *.jpeg *.bmp)")
         if file_path:
             self.company_logo_path = file_path
+            self.settings.setValue("company_logo", file_path)
             pixmap = QPixmap(file_path).scaled(self.company_logo_preview.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.company_logo_preview.setPixmap(pixmap)
             self.company_logo_container.show() 
@@ -487,6 +560,7 @@ class PlateLoadTestApp(QWidget):
         file_path, _ = QFileDialog.getOpenFileName(self, self.tr("add_accreditation_logo"), "", "Image Files (*.png *.jpg *.jpeg *.bmp)")
         if file_path:
             self.accreditation_logo_path = file_path
+            self.settings.setValue("accreditation_logo", file_path)
             pixmap = QPixmap(file_path).scaled(self.accreditation_logo_preview.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.accreditation_logo_preview.setPixmap(pixmap)
             self.accreditation_logo_container.show() 
@@ -579,18 +653,15 @@ class PlateLoadTestApp(QWidget):
         self.prev_btn.setText(self.tr("previous"))
         self.next_btn.setText(self.tr("next"))
         
-        # Update other labels - you'll need to create self.data_label in init_ui()
         if hasattr(self, 'data_label'):
             self.data_label.setText(self.tr("enter_data"))
         
-        # Update combo boxes - we don't setText but update items
         current_measurement_device = self.measurement_device_selector.currentText()
         self.measurement_device_selector.clear()
         self.measurement_device_selector.addItems([
             self.tr("direct_measurement"),
             self.tr("lever_arm_system")
         ])
-        # Try to restore selection
         for i in range(self.measurement_device_selector.count()):
             if self.measurement_device_selector.itemText(i) == current_measurement_device:
                 self.measurement_device_selector.setCurrentIndex(i)
@@ -602,17 +673,14 @@ class PlateLoadTestApp(QWidget):
             self.tr("din_method"),
             self.tr("secant_method")
         ])
-        # Try to restore selection
         for i in range(self.method_selector.count()):
             if self.method_selector.itemText(i) == current_method:
                 self.method_selector.setCurrentIndex(i)
                 break
 
-        # Update sidebar labels
         for label_key, label in self.sidebar_labels:
             label.setText(self.tr(label_key))
 
-        # Update cycle types in table
         for row in range(self.table.rowCount()):
             combo = self.table.cellWidget(row, 2)
             if combo:
@@ -632,11 +700,61 @@ class PlateLoadTestApp(QWidget):
                 delete_btn.setToolTip(self.tr("delete_row_tooltip"))
 
     def set_language(self, language_code):
-        """Change the application language"""
         if language_code in translations:
             self.current_language = language_code
+            self.settings.setValue("language", language_code)
             self.update_ui_language()
 
     def change_language(self, index):
         language_code = self.language_selector.itemData(index)
         self.set_language(language_code)
+
+    def load_settings(self):
+        language = self.settings.value("language", "sq")
+        index = self.language_selector.findData(language)
+        if index >= 0:
+            self.language_selector.setCurrentIndex(index)
+        self.set_language(language)
+        
+        self.company_logo_path = self.settings.value("company_logo", "")
+        if self.company_logo_path and os.path.exists(self.company_logo_path):
+            pixmap = QPixmap(self.company_logo_path).scaled(self.company_logo_preview.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.company_logo_preview.setPixmap(pixmap)
+            self.company_logo_container.show()
+            self.company_logo_remove_btn.show()
+            self.company_logo_btn.setText(self.tr("change_company_logo"))
+            
+        self.accreditation_logo_path = self.settings.value("accreditation_logo", "")
+        if self.accreditation_logo_path and os.path.exists(self.accreditation_logo_path):
+            pixmap = QPixmap(self.accreditation_logo_path).scaled(self.accreditation_logo_preview.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.accreditation_logo_preview.setPixmap(pixmap)
+            self.accreditation_logo_container.show()
+            self.accreditation_logo_remove_btn.show()
+            self.accreditation_logo_btn.setText(self.tr("change_accreditation_logo"))
+            
+        self.company_name.setText(self.settings.value("company_name", ""))
+        self.company_slogan.setText(self.settings.value("company_slogan", ""))
+        self.other_info.setText(self.settings.value("other_info", ""))
+
+    def closeEvent(self, event):
+        # Only save if not empty
+        if self.company_name.text():
+            self.settings.setValue("company_name", self.company_name.text())
+        if self.company_slogan.text():
+            self.settings.setValue("company_slogan", self.company_slogan.text())
+        if self.other_info.text():
+            self.settings.setValue("other_info", self.other_info.text())
+    
+        if self.company_logo_path:
+            self.settings.setValue("company_logo", self.company_logo_path)
+        if self.accreditation_logo_path:
+            self.settings.setValue("accreditation_logo", self.accreditation_logo_path)
+
+        event.accept()
+
+    def clear_saved_settings(self):
+        self.settings.remove("company_name")
+        self.settings.remove("company_slogan")
+        self.settings.remove("other_info")
+        self.settings.remove("company_logo")
+        self.settings.remove("accreditation_logo")

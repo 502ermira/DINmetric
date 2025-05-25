@@ -15,7 +15,7 @@ translations = {
         "version": "Version:",
         "date": "Date:",
         "other_info": "Other Info",
-        "client_name": "Client Name",
+        "client_name": "Client",
         "project_name": "Project Name",
         "contractor_name": "Contractor: ",
         "request_number": "Request Number",
@@ -77,7 +77,24 @@ translations = {
         "fit": "Fit",
         "points": "points",
         "preload_point": "Preload point",
-        "continued": "Continued - Part"
+        "continued": "Continued - Part",
+        "delete_row_title": "Delete Row",
+        "delete_row_confirm": "Delete row {row}?",
+        "delete_row_tooltip": "Delete this row",
+        "yes_button": "Yes",
+        "no_button": "No",
+        "reset_title": "RESET ALL SETTINGS",
+        "reset_message": "You will delete ALL saved data:\n"
+                        "✓ Company logos\n"
+                        "✓ Company information\n\n"
+                        "This action cannot be undone!\n\n"
+                        "Language setting will remain unchanged.",
+        "reset_button": "DELETE ALL SETTINGS",
+        "cancel_button": "CANCEL",
+        "reset_complete_title": "Reset Complete",
+        "reset_complete_msg": "All requested data has been cleared.\n"
+                        "Your language preference remains unchanged - "
+                        "you can change it manually if needed."
     },
     "sq": {
         "app_title": "DINmetric 18134:2012-04",
@@ -156,6 +173,23 @@ translations = {
         "fit": "- kurba",
         "points": "- pikat",
         "preload_point": "Pika e parë",
-        "continued": "Vazhdim - Pjesa"
+        "continued": "Vazhdim - Pjesa",
+        "delete_row_title": "Fshij Rreshtin",
+        "delete_row_confirm": "Të fshihet rreshti {row}?",
+        "delete_row_tooltip": "Fshije këtë rresht",
+        "yes_button": "Po",
+        "no_button": "Jo",
+        "reset_title": "RIVENDOSJE E CILËSIMEVE",
+        "reset_message": "Do të fshini TË GJITHA të dhënat e ruajtura:\n"
+                        "✓ Logot e kompanisë\n"
+                        "✓ Informatat e kompanisë\n\n"
+                        "Ky veprim nuk mund të anulohet!\n\n"
+                        "Cilësimi i gjuhës do të mbetet i njëjtë.",
+        "reset_button": "FSHIJ TË GJITHA CILËSIMET",
+        "cancel_button": "ANULO",
+        "reset_complete_title": "Rivendosja u krye",
+        "reset_complete_msg": "Të gjitha të dhënat e kërkuara janë fshirë.\n"
+                            "Preferenca juaj e gjuhës mbetet e pandryshuar - "
+                            "mund ta ndryshoni manualisht nëse dëshironi."
     }
 }

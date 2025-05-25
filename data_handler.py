@@ -190,7 +190,7 @@ def evaluate_test_secant(app, external_grouped_data=None):
                     ax.axhline(y=s1, color='black', linestyle=':', linewidth=0.6)
                     ax.axhline(y=s2, color='black', linestyle=':', linewidth=0.6)
                     
-                    x_pos = -0.015  # Negative value means a little outside of plot
+                    x_pos = -0.015
                         
                     for s_val, s_label in zip([s1, s2], [f"s₁ ({cycle[0]})", f"s₂ ({cycle[0]})"]):
                         ax.text(x_pos, s_val, s_label, va='center', ha='right', transform=ax.get_yaxis_transform(), fontsize=7, clip_on=False)
