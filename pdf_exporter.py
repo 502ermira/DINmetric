@@ -84,23 +84,28 @@ def export_to_pdf(app):
     
     elements.append(logo_table)
     elements.append(Spacer(1, 12))
-    
+
+    centered_style = ParagraphStyle(
+        name='Centered',
+        parent=normal,
+        alignment=TA_CENTER,
+        fontSize=9,
+        leading=11,
+    )
+
     # --- Metadata Section ---
     metadata_data = [
         [Paragraph(f"<b>{app.company_name.text()}</b>", ParagraphStyle('meta-title', fontSize=12, alignment=1)), app.tr("code"), app.code.text()],
         ['', app.tr("version"), app.version.text()],
         [Paragraph(app.company_slogan.text(), ParagraphStyle('slogan', fontSize=9.5, alignment=1)), app.tr("date"), app.date.text()],
-        [app.other_info.text(), '', '']
+        [Paragraph(app.other_info.text(), normal), '', '']
     ]
     
     metadata_table = Table(metadata_data, colWidths=[13*cm, 1.5*cm, 2.5*cm])
     
     metadata_table.setStyle(TableStyle([
-        # Correct spans
         ('SPAN', (0,0), (0,1)),
         ('SPAN', (0,3), (2,3)), 
-    
-        # Grid and alignment
         ('GRID', (0,0), (-1,-1), 0.5, colors.black),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('ALIGN', (0,0), (0,1), 'CENTER'),
@@ -146,34 +151,48 @@ def export_to_pdf(app):
 
     ## --- Table 1 ---
     table1_data = [
-        [app.tr("client_name"), app.client_name.text()],
-        [app.tr("project_name"), app.project_name.text()],
-        [app.tr("contractor_name"), app.contractor_name.text()],
-        [app.tr("material_type"), app.material_type.text()],
-        [app.tr("request_number"), app.request_number.text()],
-        [app.tr("weather_temp"), app.weather_temp.text()],
-        [app.tr("measurement_device"), measurement_device]
+        [Paragraph(app.tr("client_name"), normal), Paragraph(app.client_name.text(), centered_style)],
+        [Paragraph(app.tr("project_name"), normal), Paragraph(app.project_name.text(), centered_style)],
+        [Paragraph(app.tr("contractor_name"), normal), Paragraph(app.contractor_name.text(), centered_style)],
+        [Paragraph(app.tr("material_type"), normal), Paragraph(app.material_type.text(), centered_style)],
+        [Paragraph(app.tr("request_number"), normal), Paragraph(app.request_number.text(), centered_style)],
+        [Paragraph(app.tr("weather_temp"), normal), Paragraph(app.weather_temp.text(), centered_style)],
+        [Paragraph(app.tr("measurement_device"), normal), Paragraph(measurement_device, centered_style)],
     ]
-
+    
     if measurement_device == "Lever-Arm System":
-        table1_data.append([app.tr("lever_ratio"), app.lever_ratio.text()])
-
+        table1_data.append([
+            Paragraph(app.tr("lever_ratio"), normal), 
+            Paragraph(app.lever_ratio.text(), normal)
+        ])
+    
     table1 = Table(table1_data, colWidths=[4*cm, 13*cm])
     table1.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('ALIGN', (0,0), (0,-1), 'LEFT'),
         ('ALIGN', (1,0), (1,-1), 'CENTER'),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('FONTSIZE', (0,0), (-1,-1), 9),
+        ('WORDWRAP', (0,0), (-1,-1), True),
+        ('LEADING', (0,0), (-1,-1), 12),
     ]))
     elements.append(table1)
     elements.append(Spacer(1, 30))
 
+
     ## --- Table 2 ---
     table2_data = [
-        [app.tr("measured_by"), app.measured_by.text()],
-        [app.tr("supervisor"), app.supervisor.text()],
-        [app.tr("laboratory"), app.laboratory.text()],
+        [
+            Paragraph(app.tr("measured_by"), normal), 
+            Paragraph(app.measured_by.text(), centered_style)
+        ],
+        [
+            Paragraph(app.tr("supervisor"), normal), 
+            Paragraph(app.supervisor.text(), centered_style)
+        ],
+        [
+            Paragraph(app.tr("laboratory"), normal), 
+            Paragraph(app.laboratory.text(), centered_style)
+        ],
     ]
 
     table2 = Table(table2_data, colWidths=[4*cm, 13*cm])
@@ -281,6 +300,11 @@ def add_summary_page(app, elements, styles):
 
     def p(text, style=styles['Normal']):
         return Paragraph(text, style)
+    
+    styles = getSampleStyleSheet()
+    normal = styles["Normal"]
+    normal.fontSize = 9
+    normal.leading = 11
 
     logo_row = []
     
@@ -309,7 +333,7 @@ def add_summary_page(app, elements, styles):
         [Paragraph(f"<b>{app.company_name.text()}</b>", ParagraphStyle('meta-title', fontSize=12, alignment=1)), app.tr('code'), app.code.text()],
         ['', app.tr('version'), app.version.text()],
         [Paragraph(app.company_slogan.text(), ParagraphStyle('slogan', fontSize=9, alignment=1)), app.tr('date'), app.date.text()],
-        [app.other_info.text(), '', '']
+        [Paragraph(app.other_info.text(), normal), '', '']
     ]
     
     metadata_table = Table(metadata_data, colWidths=[13*cm, 1.5*cm, 2.5*cm])
@@ -393,15 +417,23 @@ def add_summary_page(app, elements, styles):
     
     colWidths = [w * total_width for w in weights]
 
+    centered_style = ParagraphStyle(
+        name='Centered',
+        parent=normal,
+        alignment=TA_CENTER,
+        fontSize=9,
+        leading=11,
+    )
+
     for idx, result in enumerate(app.summary_results, start=1):
         summary_data.append([
-            str(idx),
-            result['station'],
-            result['side'],
-            result['material'],
-            f"{result['ev1']:.2f}",
-            f"{result['ev2']:.2f}",
-            f"{result['ev2_ev1_ratio']:.2f}" if result['ev2_ev1_ratio'] else "-"
+            Paragraph(str(idx), centered_style),
+            Paragraph(result['station'], centered_style),
+            Paragraph(result['side'], centered_style),
+            Paragraph(result['material'], centered_style),
+            Paragraph(f"{result['ev1']:.2f}", centered_style),
+            Paragraph(f"{result['ev2']:.2f}", centered_style),
+            Paragraph(f"{result['ev2_ev1_ratio']:.2f}" if result['ev2_ev1_ratio'] else "-", centered_style)
         ])
 
     # Split summary_data into chunks of 24 rows
@@ -428,7 +460,10 @@ def add_summary_page(app, elements, styles):
         table.setStyle(TableStyle([
             ('GRID', (0,0), (-1,-1), 0.5, colors.black),
             ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('WORDWRAP', (0,0), (-1,-1), True),
+            ('LEADING', (0,0), (-1,-1), 11),
             ('FONTNAME', (0,0), (-1,-1), 'DejaVuSans'),
             ('FONTSIZE', (0,0), (-1,-1), 8.5),
         ]))
@@ -445,11 +480,24 @@ def add_graph_pages(app, elements, styles):
     plate_diameter = app.plate_diameter.currentText()
 
     elements.append(Spacer(1, 0.1 * inch))
- 
-    for i in range(app.graphs_stack.count()): 
-        def p(text, style=styles['Normal']):
-            return Paragraph(text, style)
     
+    for i in range(app.graphs_stack.count()): 
+        styles = getSampleStyleSheet()
+        normal = styles["Normal"]
+        normal.fontSize = 9
+        normal.leading = 11
+    
+        def p(text, style=normal):
+            return Paragraph(text, style)
+        
+        centered_style = ParagraphStyle(
+            name='Centered',
+            parent=normal,
+            alignment=TA_CENTER,
+            fontSize=9,
+            leading=11,
+        )
+
         logo_row = []
         
         if app.company_logo_path and os.path.exists(app.company_logo_path):
@@ -500,19 +548,41 @@ def add_graph_pages(app, elements, styles):
     
         # Metadata Table
         metadata_table_data = [
-            [app.tr('client_name'), app.client_name.text()],
-            [app.tr('project_name'), app.project_name.text()],
-            [app.tr('contractor_name'), app.contractor_name.text()],
-            [app.tr('material_type'), app.material_type.text()],
-            [app.tr('date'), app.date.text()],
-            [app.tr('weather_temp'), app.weather_temp.text()],
+            [
+                Paragraph(app.tr('client_name'), normal), 
+                Paragraph(app.client_name.text(), centered_style)
+            ],
+            [
+                Paragraph(app.tr('project_name'), normal), 
+                Paragraph(app.project_name.text(), centered_style)
+            ],
+            [
+                Paragraph(app.tr('contractor_name'), normal), 
+                Paragraph(app.contractor_name.text(), centered_style)
+            ],
+            [
+                Paragraph(app.tr('material_type'), normal), 
+                Paragraph(app.material_type.text(), centered_style)
+            ],
+            [
+                Paragraph(app.tr('date'), normal), 
+                Paragraph(app.date.text(), centered_style)
+            ],
+            [
+                Paragraph(app.tr('weather_temp'), normal), 
+                Paragraph(app.weather_temp.text(), centered_style)
+            ],
         ]
+
         table = Table(metadata_table_data, colWidths=[3.5*cm, 13.5*cm])
         table.setStyle(TableStyle([
             ('GRID', (0,0), (-1,-1), 0.5, colors.black),
             ('FONTSIZE', (0,0), (-1,-1), 8),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ('ALIGN', (0,0), (0,-1), 'LEFT'),
             ('ALIGN', (1,0), (1,-1), 'CENTER'),
+            ('WORDWRAP', (0,0), (-1,-1), True),
+            ('LEADING', (0,0), (-1,-1), 12),
         ]))
         elements.append(table)
         elements.append(Spacer(1, 20))
