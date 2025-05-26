@@ -444,17 +444,13 @@ class PlateLoadTestApp(QWidget):
        self.toggle_lever_ratio_field()
    
        # Clear table contents
+       self.table.setRowCount(0) 
        self.table.setRowCount(16)
        for row in range(16):
+           self.setup_row(row)
            for col in range(self.table.columnCount()):
-               item = self.table.item(row, col)
-               if item:
-                   self.table.setItem(row, col, QTableWidgetItem(""))
-               widget = self.table.cellWidget(row, col)
-               if isinstance(widget, QLineEdit):
-                   widget.clear()
-               elif hasattr(widget, 'setCurrentIndex'):
-                   widget.setCurrentIndex(0)
+               if self.table.item(row, col):
+                   self.table.item(row, col).setText("")
    
        # Reset company and accreditation logos
        self.company_logo_preview.clear()
@@ -751,10 +747,3 @@ class PlateLoadTestApp(QWidget):
             self.settings.setValue("accreditation_logo", self.accreditation_logo_path)
 
         event.accept()
-
-    def clear_saved_settings(self):
-        self.settings.remove("company_name")
-        self.settings.remove("company_slogan")
-        self.settings.remove("other_info")
-        self.settings.remove("company_logo")
-        self.settings.remove("accreditation_logo")
