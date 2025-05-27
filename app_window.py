@@ -203,6 +203,8 @@ class PlateLoadTestApp(QWidget):
          self.contractor_name, self.request_number, self.weather_temp,
          self.designed_by, self.measured_by, self.supervisor, self.laboratory,
          self.material_type) = [field for _, field in sidebar_info]
+        
+        self.material_type.textChanged.connect(self.update_material_in_results)
 
         # --- Always Visible Fields ---
         self.plate_diameter = NoScrollComboBox()
@@ -747,3 +749,8 @@ class PlateLoadTestApp(QWidget):
             self.settings.setValue("accreditation_logo", self.accreditation_logo_path)
 
         event.accept()
+
+    def update_material_in_results(self):
+        if hasattr(self, 'summary_results') and self.summary_results:
+            for result in self.summary_results:
+                result['material'] = self.material_type.text()
