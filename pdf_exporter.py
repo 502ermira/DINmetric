@@ -345,27 +345,29 @@ def add_summary_page(app, elements, styles):
     normal = styles["Normal"]
     normal.fontSize = 9
     normal.leading = 11
-
-    logo_row = []
     
     # Add company logo if the path exists
+    total_width = 17 * cm
+    desired_height = 2 * cm
+    
     if app.company_logo_path and os.path.exists(app.company_logo_path):
-        image_reader = ImageReader(app.company_logo_path)
-        original_width, original_height = image_reader.getSize()
-        
-        desired_height = 2 * cm
-        scale_factor = desired_height / float(original_height)
-        adjusted_width = original_width * scale_factor
-        
-        logo = Image(app.company_logo_path, width=adjusted_width, height=desired_height)
-        logo_row.append(logo)
+        company_reader = ImageReader(app.company_logo_path)
+        w, h = company_reader.getSize()
+        scale = desired_height / h
+        company_logo = Image(app.company_logo_path, width=w * scale, height=desired_height)
     else:
-        logo_row.append(Spacer(3*cm, 2*cm))
+        company_logo = Spacer(4*cm, desired_height)
     
-    logo_row.append(Spacer(15*cm, 2*cm))
+    logo_table = Table(
+        [[company_logo, Spacer(1, desired_height), Spacer(1, desired_height)]],
+        colWidths=[total_width * 0.2, total_width * 0.6, total_width * 0.2]
+    )
+    logo_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+    ]))
     
-    # Create a table with the logo and spacer
-    elements.append(Table([logo_row], colWidths=[3*cm, 15*cm]))
+    elements.append(logo_table)
     elements.append(Spacer(1, 12))
     
     # --- Metadata Section ---
@@ -529,25 +531,27 @@ def add_graph_pages(app, elements, styles):
             leading=11,
         )
 
-        logo_row = []
+        total_width = 17 * cm
+        desired_height = 2 * cm
         
         if app.company_logo_path and os.path.exists(app.company_logo_path):
-            image_reader = ImageReader(app.company_logo_path)
-            original_width, original_height = image_reader.getSize()
-            
-            desired_height = 2 * cm
-            scale_factor = desired_height / float(original_height)
-            adjusted_width = original_width * scale_factor
-            
-            logo = Image(app.company_logo_path, width=adjusted_width, height=desired_height)
-            logo_row.append(logo)
+            company_reader = ImageReader(app.company_logo_path)
+            w, h = company_reader.getSize()
+            scale = desired_height / h
+            company_logo = Image(app.company_logo_path, width=w * scale, height=desired_height)
         else:
-            logo_row.append(Spacer(3*cm, 2*cm))
+            company_logo = Spacer(4*cm, desired_height)
         
-        logo_row.append(Spacer(15*cm, 2*cm))
+        logo_table = Table(
+            [[company_logo, Spacer(1, desired_height), Spacer(1, desired_height)]],
+            colWidths=[total_width * 0.2, total_width * 0.6, total_width * 0.2]
+        )
+        logo_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+        ]))
         
-        # Create a table with the logo and spacer
-        elements.append(Table([logo_row], colWidths=[3*cm, 15*cm]))
+        elements.append(logo_table)
         elements.append(Spacer(1, 10))
     
         page_widget = app.graphs_stack.widget(i)
