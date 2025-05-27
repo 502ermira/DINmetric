@@ -296,6 +296,46 @@ def export_to_pdf(app):
         onLaterPages=draw_footer_dynamic
     )
 
+
+def chunk_table_by_height(summary_data, headers, colWidths, styles, max_heights_cm):
+    """
+    Split `summary_data` into chunks based on estimated table height.
+    Accepts a list of max_heights_cm for each page.
+    """
+    chunks = []
+    current_chunk = []
+    page_index = 0
+    available_height = max_heights_cm[0] * cm
+
+    for row in summary_data:
+        test_table = Table([headers] + current_chunk + [row], colWidths=colWidths, repeatRows=1)
+        test_table.setStyle(TableStyle([
+            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('FONTNAME', (0,0), (-1,-1), 'DejaVuSans'),
+            ('FONTSIZE', (0,0), (-1,-1), 8.5),
+        ]))
+
+        # Estimate height
+        width, height = test_table.wrap(0, 0)
+        if height > available_height:
+            chunks.append(current_chunk)
+            current_chunk = [row]
+            page_index += 1
+            # Use next page's height or default to last known height
+            if page_index < len(max_heights_cm):
+                available_height = max_heights_cm[page_index] * cm
+            else:
+                available_height = max_heights_cm[-1] * cm
+        else:
+            current_chunk.append(row)
+
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    return chunks
+
 def add_summary_page(app, elements, styles):
 
     def p(text, style=styles['Normal']):
@@ -436,27 +476,18 @@ def add_summary_page(app, elements, styles):
             Paragraph(f"{result['ev2_ev1_ratio']:.2f}" if result['ev2_ev1_ratio'] else "-", centered_style)
         ])
 
-    # Split summary_data into chunks of 24 rows
-    chunk_size = 24
-    total_pages = (len(summary_data) + chunk_size - 1) // chunk_size
+    max_heights_cm = [15] + [23] * 100  # up to 101 pages
+    chunked_data = chunk_table_by_height(summary_data, summary_headers, colWidths, styles, max_heights_cm)
     
-    for page_num, i in enumerate(range(0, len(summary_data), chunk_size)):
-        chunk = summary_data[i:i + chunk_size]
-        
-        # Add continuation header for pages after the first
+    for page_num, chunk in enumerate(chunked_data):
         if page_num > 0:
             elements.append(Paragraph(
-                f"<b>{app.tr('summary_results')} ({app.tr('continued')} {page_num + 1}/{total_pages})</b>",
+                f"<b>{app.tr('summary_results')} ({app.tr('continued')} {page_num + 1}/{len(chunked_data)})</b>",
                 ParagraphStyle('continuation-title', fontSize=14.5, alignment=1)
             ))
             elements.append(Spacer(1, 24))
-        
-        # Create the table
-        table = Table([summary_headers] + chunk, 
-                     repeatRows=1, 
-                     hAlign='CENTER', 
-                     colWidths=colWidths)
-        
+    
+        table = Table([summary_headers] + chunk, repeatRows=1, hAlign='CENTER', colWidths=colWidths)
         table.setStyle(TableStyle([
             ('GRID', (0,0), (-1,-1), 0.5, colors.black),
             ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
@@ -467,10 +498,10 @@ def add_summary_page(app, elements, styles):
             ('FONTNAME', (0,0), (-1,-1), 'DejaVuSans'),
             ('FONTSIZE', (0,0), (-1,-1), 8.5),
         ]))
-        
+    
         elements.append(table)
         elements.append(PageBreak())
-        
+    
         if not chunk:
             elements.pop()
 
