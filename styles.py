@@ -111,6 +111,15 @@ QScrollArea {
     background-color: 111;
 }
 
+QScrollArea#sidebarScrollArea {
+    border: 0;
+    background: transparent;
+}
+
+QScrollArea#sidebarScrollArea > QWidget > QWidget {
+    background: transparent;
+}
+
 /* Form Layout Labels */
 QLabel {
     font-weight: normal;

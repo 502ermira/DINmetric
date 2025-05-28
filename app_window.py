@@ -41,11 +41,22 @@ class PlateLoadTestApp(QWidget):
         return translations[self.current_language].get(key, key)
 
     def init_ui(self):
+        # Create a scroll area for the sidebar
+        self.sidebar_scroll = QScrollArea()
+        self.sidebar_scroll.setObjectName("sidebarScrollArea")
+        self.sidebar_scroll.setWidgetResizable(True)
+        self.sidebar_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.sidebar_scroll.setFrameShape(QFrame.NoFrame)
+        
         self.sidebar_widget = QWidget()
-        self.sidebar_widget.setMinimumWidth(0)
-        self.sidebar_widget.setMaximumWidth(0)
         self.sidebar_layout = QVBoxLayout()
         self.sidebar_widget.setLayout(self.sidebar_layout)
+        self.sidebar_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        
+        # Set the widget to scroll
+        self.sidebar_scroll.setWidget(self.sidebar_widget)
+        self.sidebar_expanded = False
+        self.sidebar_scroll.setFixedWidth(0) 
         self.language_selector = NoScrollComboBox()
         self.language_selector.addItem("Shqip", "sq")
         self.language_selector.addItem("English", "en")
@@ -327,7 +338,7 @@ class PlateLoadTestApp(QWidget):
         left_panel.addWidget(self.table)
         left_panel.addLayout(action_buttons_layout)
 
-        center_split.addWidget(self.sidebar_widget, stretch=1)
+        center_split.addWidget(self.sidebar_scroll)
         center_split.addLayout(left_panel, stretch=4)
 
         right_panel = QVBoxLayout()
@@ -346,7 +357,7 @@ class PlateLoadTestApp(QWidget):
 
         # Horizontal layout to hold sidebar + everything else
         full_layout = QHBoxLayout()
-        full_layout.addWidget(self.sidebar_widget)
+        full_layout.addWidget(self.sidebar_scroll)
         full_layout.addWidget(main_content_widget, stretch=1)
 
         self.setLayout(full_layout)
@@ -354,7 +365,7 @@ class PlateLoadTestApp(QWidget):
 
     def toggle_sidebar(self):
         if self.sidebar_expanded:
-            self.sidebar_widget.setFixedWidth(0)
+            self.sidebar_scroll.setFixedWidth(0)
             self.toggle_button.setIcon(self.style().standardIcon(QStyle.SP_ArrowLeft))
             self.toggle_button.setText(self.tr("show_report_details"))
             self.sidebar_expanded = False
@@ -368,9 +379,9 @@ class PlateLoadTestApp(QWidget):
         """Calculate and set appropriate sidebar width based on current window size"""
         base_width = self.width() // 5
         extra_pixels = 6
-        max_sidebar_width = 500
+        max_sidebar_width = 400
         calculated_width = min(base_width + extra_pixels, max_sidebar_width)
-        self.sidebar_widget.setFixedWidth(calculated_width)
+        self.sidebar_scroll.setFixedWidth(calculated_width)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
