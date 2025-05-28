@@ -26,7 +26,7 @@ class PlateLoadTestApp(QWidget):
         self.setWindowFlags(Qt.Window)
         self.setWindowTitle(self.tr("app_title"))
         self.settings = QSettings("DINmetric", "DINmetric")
-        self.setMinimumSize(900, 650)
+        self.setMinimumSize(920, 680)
         self.sidebar_expanded = False
         self.showMaximized()
         self.init_ui()
@@ -41,19 +41,22 @@ class PlateLoadTestApp(QWidget):
         return translations[self.current_language].get(key, key)
 
     def init_ui(self):
-        # Create a scroll area for the sidebar
         self.sidebar_scroll = QScrollArea()
         self.sidebar_scroll.setObjectName("sidebarScrollArea")
         self.sidebar_scroll.setWidgetResizable(True)
         self.sidebar_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.sidebar_scroll.setFrameShape(QFrame.NoFrame)
-        
+
         self.sidebar_widget = QWidget()
         self.sidebar_layout = QVBoxLayout()
         self.sidebar_widget.setLayout(self.sidebar_layout)
-        self.sidebar_widget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+
+        self.default_margins = self.sidebar_layout.contentsMargins()
         
-        # Set the widget to scroll
+        self.sidebar_scroll.verticalScrollBar().rangeChanged.connect(self.check_scrollbar_visibility)
+        self.sidebar_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.sidebar_widget.setMaximumWidth(self.sidebar_scroll.width())
+        
         self.sidebar_scroll.setWidget(self.sidebar_widget)
         self.sidebar_expanded = False
         self.sidebar_scroll.setFixedWidth(0) 
@@ -177,10 +180,12 @@ class PlateLoadTestApp(QWidget):
         def make_row(label_key, widget):
             row = QHBoxLayout()
             label = QLabel(self.tr(label_key))
+            label.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+            widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             row.addWidget(label)
-            row.addWidget(widget)
+            row.addWidget(widget, stretch=1)
             return row, label
-
+        
         # --- Sidebar Content ---
         sidebar_info = [
             ("test_id", QLineEdit()),
@@ -359,7 +364,6 @@ class PlateLoadTestApp(QWidget):
         full_layout = QHBoxLayout()
         full_layout.addWidget(self.sidebar_scroll)
         full_layout.addWidget(main_content_widget, stretch=1)
-
         self.setLayout(full_layout)
         self.update_ui_language()
 
@@ -376,12 +380,13 @@ class PlateLoadTestApp(QWidget):
             self.sidebar_expanded = True
 
     def update_sidebar_width(self):
-        """Calculate and set appropriate sidebar width based on current window size"""
         base_width = self.width() // 5
         extra_pixels = 6
         max_sidebar_width = 400
         calculated_width = min(base_width + extra_pixels, max_sidebar_width)
         self.sidebar_scroll.setFixedWidth(calculated_width)
+        self.sidebar_widget.setMinimumWidth(0)
+        self.sidebar_widget.setMaximumWidth(calculated_width)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -765,3 +770,17 @@ class PlateLoadTestApp(QWidget):
         if hasattr(self, 'summary_results') and self.summary_results:
             for result in self.summary_results:
                 result['material'] = self.material_type.text()
+
+    def check_scrollbar_visibility(self):
+        scrollbar = self.sidebar_scroll.verticalScrollBar()
+        needs_scrollbar = scrollbar.maximum() > 0
+        
+        if needs_scrollbar:
+            self.sidebar_layout.setContentsMargins(0, 0, 0, 0)  # Tight margins when scrolling
+        else:
+            self.sidebar_layout.setContentsMargins(
+                self.default_margins.left(),
+                self.default_margins.top(),
+                self.default_margins.right(),
+                self.default_margins.bottom()
+            )  # Restore defaults
