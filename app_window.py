@@ -26,7 +26,7 @@ class PlateLoadTestApp(QWidget):
         self.setWindowFlags(Qt.Window)
         self.setWindowTitle(self.tr("app_title"))
         self.settings = QSettings("DINmetric", "DINmetric")
-        self.setMinimumSize(920, 680)
+        self.setMinimumSize(930, 680)
         self.sidebar_expanded = False
         self.showMaximized()
         self.init_ui()
@@ -776,11 +776,32 @@ class PlateLoadTestApp(QWidget):
         needs_scrollbar = scrollbar.maximum() > 0
         
         if needs_scrollbar:
-            self.sidebar_layout.setContentsMargins(0, 0, 0, 0)  # Tight margins when scrolling
+            self.sidebar_layout.setContentsMargins(0, 0, 0, 0)
+            
+            self.company_logo_container.setFixedSize(35, 18)
+            self.company_logo_preview.setFixedSize(35, 18)
+            self.company_logo_remove_btn.setFixedSize(10, 10)
+            self.company_logo_remove_btn.move(35 - 10, 0)
+            
+            self.accreditation_logo_container.setFixedSize(35, 18)
+            self.accreditation_logo_preview.setFixedSize(35, 18)
+            self.accreditation_logo_remove_btn.setFixedSize(10, 10)
+            self.accreditation_logo_remove_btn.move(35 - 10, 0)
+            
         else:
             self.sidebar_layout.setContentsMargins(
                 self.default_margins.left(),
                 self.default_margins.top(),
                 self.default_margins.right(),
                 self.default_margins.bottom()
-            )  # Restore defaults
+            )
+            
+            self.company_logo_container.setFixedSize(70, 35)
+            self.company_logo_preview.setFixedSize(70, 35)
+            self.company_logo_remove_btn.setFixedSize(16, 16)
+            self.company_logo_remove_btn.move(70 - 16, 0)
+            
+            self.accreditation_logo_container.setFixedSize(70, 35)
+            self.accreditation_logo_preview.setFixedSize(70, 35)
+            self.accreditation_logo_remove_btn.setFixedSize(16, 16)
+            self.accreditation_logo_remove_btn.move(70 - 16, 0)
