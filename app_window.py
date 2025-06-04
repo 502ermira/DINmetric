@@ -30,6 +30,7 @@ class PlateLoadTestApp(QWidget):
         self.sidebar_expanded = False
         self.showMaximized()
         self.init_ui()
+        self.setup_autosave()
         self.clear_button_clicks = 0
         self.clear_button_timer = QTimer(self)
         self.clear_button_timer.setSingleShot(True)
@@ -442,10 +443,10 @@ class PlateLoadTestApp(QWidget):
                 self.table.setCellWidget(i, 5, delete_btn)
 
     def _clear_form_data(self):
-       """Clears only form/table data (original clear behavior)."""
+       """Clears only form/table data."""
        fields = [
-           self.test_id, self.company_name, self.company_slogan, self.code, self.version,
-           self.date, self.other_info, self.client_name, self.project_name,
+           self.test_id, self.code, self.version,
+           self.date, self.client_name, self.project_name,
            self.contractor_name, self.request_number, self.weather_temp,
            self.designed_by, self.measured_by, self.supervisor, self.laboratory,
            self.material_type, self.lever_ratio
@@ -470,17 +471,6 @@ class PlateLoadTestApp(QWidget):
                if self.table.item(row, col):
                    self.table.item(row, col).setText("")
    
-       # Reset company and accreditation logos
-       self.company_logo_preview.clear()
-       self.company_logo_container.hide()
-       self.company_logo_remove_btn.hide()
-       self.company_logo_path = None
-   
-       self.accreditation_logo_preview.clear()
-       self.accreditation_logo_container.hide()
-       self.accreditation_logo_remove_btn.hide()
-       self.accreditation_logo_path = None
-   
        # Clear graphs
        while self.graphs_stack.count():
            widget = self.graphs_stack.widget(0)
@@ -492,6 +482,7 @@ class PlateLoadTestApp(QWidget):
         
         if self.clear_button_clicks == 1:
             self._clear_form_data()
+            self.settings.remove("autosave/table_data")
             self.clear_button_timer.start(800)
         elif self.clear_button_clicks >= 2:
             self._reset_click_counter()
@@ -502,7 +493,7 @@ class PlateLoadTestApp(QWidget):
         self.clear_button_clicks = 0
     
     def _confirm_settings_reset(self):
-        """Clears all data EXCEPT language preference"""
+        """Clears ALL data including company info and logos, EXCEPT language preference"""
         current_lang = self.settings.value("language", "sq")
         
         warning_dlg = QMessageBox(self)
@@ -532,6 +523,24 @@ class PlateLoadTestApp(QWidget):
             self.settings.clear()
             self.settings.setValue("language", current_lang)
             self.current_language = current_lang
+            
+            self.company_name.clear()
+            self.company_slogan.clear()
+            self.other_info.clear()
+            
+            self.company_logo_preview.clear()
+            self.company_logo_container.hide()
+            self.company_logo_remove_btn.hide()
+            self.company_logo_path = None
+            self.company_logo_btn.setText(self.tr("add_company_logo"))
+        
+            self.accreditation_logo_preview.clear()
+            self.accreditation_logo_container.hide()
+            self.accreditation_logo_remove_btn.hide()
+            self.accreditation_logo_path = None
+            self.accreditation_logo_btn.setText(self.tr("add_accreditation_logo"))
+            
+            # Reload settings
             self.load_settings()
             
             # Show success confirmation
@@ -805,3 +814,85 @@ class PlateLoadTestApp(QWidget):
             self.accreditation_logo_preview.setFixedSize(70, 35)
             self.accreditation_logo_remove_btn.setFixedSize(16, 16)
             self.accreditation_logo_remove_btn.move(70 - 16, 0)
+
+
+    def setup_autosave(self):
+        """Initialize autosave functionality"""
+        self.autosave_timer = QTimer(self)
+        self.autosave_timer.setInterval(14000)  # Save every 14 seconds
+        self.autosave_timer.timeout.connect(self.autosave_table_data)
+        self.autosave_timer.start()
+        
+        # Load saved data on startup
+        self.load_table_data()
+
+    def autosave_table_data(self):
+        """Save table data to persistent storage"""
+        table_data = []
+        
+        for row in range(self.table.rowCount()):
+            row_data = {
+                "load": "",
+                "settlement": "",
+                "cycle_type": "",
+                "station": "",
+                "side": ""
+            }
+            
+            item = self.table.item(row, 0)
+            if item and item.text():
+                row_data["load"] = item.text()
+            
+            item = self.table.item(row, 1)
+            if item and item.text():
+                row_data["settlement"] = item.text()
+            
+            combo = self.table.cellWidget(row, 2)
+            if combo and combo.currentData():
+                row_data["cycle_type"] = combo.currentData()
+            
+            widget = self.table.cellWidget(row, 3)
+            if widget and widget.text():
+                row_data["station"] = widget.text()
+            
+            widget = self.table.cellWidget(row, 4)
+            if widget and widget.text():
+                row_data["side"] = widget.text()
+            
+            table_data.append(row_data)
+        
+        self.settings.setValue("autosave/table_data", table_data)
+
+    def load_table_data(self):
+        """Load table data from persistent storage"""
+        table_data = self.settings.value("autosave/table_data", [])
+        if not table_data:
+            return
+            
+        if len(table_data) > self.table.rowCount():
+            self.table.setRowCount(len(table_data))
+            for row in range(self.table.rowCount()):
+                self.setup_row(row)
+        
+        # Restore data
+        for row, row_data in enumerate(table_data):
+            if row_data["load"]:
+                self.table.setItem(row, 0, QTableWidgetItem(row_data["load"]))
+            
+            if row_data["settlement"]:
+                self.table.setItem(row, 1, QTableWidgetItem(row_data["settlement"]))
+            
+            if row_data["cycle_type"]:
+                combo = self.table.cellWidget(row, 2)
+                if combo:
+                    index = combo.findData(row_data["cycle_type"])
+                    if index >= 0:
+                        combo.setCurrentIndex(index)
+            
+            station_widget = self.table.cellWidget(row, 3)
+            if station_widget and row_data["station"]:
+                station_widget.setText(row_data["station"])
+            
+            side_widget = self.table.cellWidget(row, 4)
+            if side_widget and row_data["side"]:
+                side_widget.setText(row_data["side"])
