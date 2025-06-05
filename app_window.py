@@ -288,13 +288,17 @@ class PlateLoadTestApp(QWidget):
         for row in range(16):
             self.setup_row(row)
 
+        self.set_initial_cycle_types()
+
         # --- Action Buttons ---
         action_buttons_layout = QHBoxLayout()
+        self.add_test_point_btn = QPushButton("Add Test Point")
         self.add_row_btn = QPushButton("Add Row")
         self.calc_btn = QPushButton("Evaluate")
         self.export_btn = QPushButton("Export to PDF")
         self.clear_btn = QPushButton("Clear")
 
+        action_buttons_layout.addWidget(self.add_test_point_btn)
         action_buttons_layout.addWidget(self.add_row_btn)
         action_buttons_layout.addWidget(self.calc_btn)
         action_buttons_layout.addWidget(self.export_btn)
@@ -303,6 +307,7 @@ class PlateLoadTestApp(QWidget):
         self.add_row_btn.clicked.connect(self.add_row)
         self.clear_btn.clicked.connect(self.clear_fields)
         self.calc_btn.clicked.connect(self.run_selected_method)
+        self.add_test_point_btn.clicked.connect(self.add_test_point)
         self.export_btn.clicked.connect(lambda: export_to_pdf(self))
 
         self.graphs_stack = QStackedWidget()
@@ -367,6 +372,22 @@ class PlateLoadTestApp(QWidget):
         full_layout.addWidget(main_content_widget, stretch=1)
         self.setLayout(full_layout)
         self.update_ui_language()
+
+    def set_initial_cycle_types(self):
+        """Sets the default cycle types for the initial 16 rows"""
+        for row in range(16):
+            if row < 7:  # First 7 rows
+                cycle_key = "first_loading"
+            elif row < 10:  # Next 3 rows
+                cycle_key = "unloading"
+            else:  # Last 6 rows
+                cycle_key = "second_loading"
+            
+            combo = self.table.cellWidget(row, 2)
+            if combo:
+                index = combo.findData(cycle_key)
+                if index >= 0:
+                    combo.setCurrentIndex(index)
 
     def toggle_sidebar(self):
         if self.sidebar_expanded:
@@ -470,6 +491,8 @@ class PlateLoadTestApp(QWidget):
            for col in range(self.table.columnCount()):
                if self.table.item(row, col):
                    self.table.item(row, col).setText("")
+        
+       self.set_initial_cycle_types()
    
        # Clear graphs
        while self.graphs_stack.count():
@@ -568,6 +591,29 @@ class PlateLoadTestApp(QWidget):
         if index < self.graphs_stack.count() - 1:
             self.graphs_stack.setCurrentIndex(index + 1)
 
+    def add_test_point(self):
+        """Adds 16 new rows with predefined cycle types"""
+        current_row_count = self.table.rowCount()
+        self.table.setRowCount(current_row_count + 16)
+        
+        # Setup all new rows
+        for row in range(current_row_count, current_row_count + 16):
+            self.setup_row(row)
+            
+            # Set cycle types based on position
+            if row < current_row_count + 7:  # First 7 rows
+                cycle_key = "first_loading"
+            elif row < current_row_count + 10:  # Next 3 rows
+                cycle_key = "unloading"
+            else:  # Last 6 rows
+                cycle_key = "second_loading"
+            
+            # Find and set the combo box value using the key
+            combo = self.table.cellWidget(row, 2)
+            index = combo.findData(cycle_key)
+            if index >= 0:
+                combo.setCurrentIndex(index)
+    
     def upload_company_logo(self):
         file_path, _ = QFileDialog.getOpenFileName(self, self.tr("add_company_logo"), "", "Image Files (*.png *.jpg *.jpeg *.bmp)")
         if file_path:
@@ -671,6 +717,7 @@ class PlateLoadTestApp(QWidget):
         self.clear_btn.setText(self.tr("clear"))
         self.calc_btn.setText(self.tr("evaluate"))
         self.export_btn.setText(self.tr("export_pdf"))
+        self.add_test_point_btn.setText(self.tr("add_test_point"))
         
         # Update navigation buttons
         self.prev_btn.setText(self.tr("previous"))
